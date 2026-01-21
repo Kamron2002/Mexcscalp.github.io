@@ -3,285 +3,160 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Saraf Ecosystem</title>
+    <title>Saraf V44 Control</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
         :root {
-            --bg: #09090b; --card: #18181b; --text: #fafafa; --sub: #a1a1aa;
-            --primary: #3b82f6; --green: #22c55e; --red: #ef4444; --border: #27272a;
+            --bg: #0d1117; 
+            --card: #161b22; 
+            --text: #e6edf3;
+            --sub: #8b949e; 
+            --green: #238636; 
+            --red: #da3633; 
+            --blue: #2f81f7; /* Новый яркий цвет */
+            --orange: #d29922;
         }
-        body { background: var(--bg); color: var(--text); font-family: -apple-system, sans-serif; margin: 0; padding: 0; padding-bottom: 90px; -webkit-tap-highlight-color: transparent; }
+        body { background: var(--bg); color: var(--text); font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; margin: 0; padding: 16px; padding-bottom: 50px; }
         
-        /* HEADER */
-        .header { padding: 20px; background: linear-gradient(180deg, rgba(59,130,246,0.1) 0%, rgba(9,9,11,0) 100%); }
-        .title { font-size: 24px; font-weight: 800; letter-spacing: -0.5px; }
-        .subtitle { font-size: 13px; color: var(--sub); }
-
-        /* PAGES */
-        .page { display: none; padding: 0 16px; animation: fadeIn 0.2s ease; }
-        .page.active { display: block; }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
-
-        /* CARDS */
-        .card { background: var(--card); border: 1px solid var(--border); border-radius: 16px; padding: 16px; margin-bottom: 12px; }
-        .card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
-        .card-title { font-size: 14px; font-weight: 600; color: var(--sub); text-transform: uppercase; }
-
-        /* STATS CHART (CSS Only) */
-        .chart-container { height: 100px; display: flex; align-items: flex-end; gap: 4px; padding-top: 20px; }
-        .bar { flex: 1; background: var(--green); border-radius: 4px 4px 0 0; opacity: 0.5; transition: height 1s; }
-        .bar:hover { opacity: 1; }
-        .stat-row { display: flex; justify-content: space-between; margin-top: 10px; }
-        .stat-item { text-align: center; }
-        .stat-val { font-size: 18px; font-weight: bold; }
-        .stat-label { font-size: 10px; color: var(--sub); }
-
-        /* INPUTS */
+        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+        .badge { background: rgba(47, 129, 247, 0.2); color: var(--blue); padding: 4px 8px; border-radius: 12px; font-size: 12px; font-weight: bold; }
+        
+        /* КАРТОЧКИ */
+        .card { background: var(--card); border: 1px solid #30363d; border-radius: 16px; padding: 16px; margin-bottom: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+        h3 { margin: 0 0 12px 0; font-size: 13px; color: var(--sub); text-transform: uppercase; letter-spacing: 0.5px; border-bottom: 1px solid #30363d; padding-bottom: 8px; }
+        
+        /* СЕТКА */
         .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
-        label { display: block; font-size: 11px; color: var(--sub); margin-bottom: 6px; }
-        input, select { width: 100%; background: #000; border: 1px solid var(--border); color: white; padding: 14px; border-radius: 10px; font-size: 15px; box-sizing: border-box; outline: none; }
-        input:focus { border-color: var(--primary); }
+        .input-box label { display: block; font-size: 11px; color: var(--sub); margin-bottom: 6px; }
+        input { width: 100%; background: #0d1117; border: 1px solid #30363d; color: white; padding: 12px; border-radius: 8px; font-size: 14px; box-sizing: border-box; font-weight: 500; }
+        input:focus { border-color: var(--blue); outline: none; box-shadow: 0 0 0 2px rgba(47, 129, 247, 0.3); }
 
-        /* BOT LIST ITEM */
-        .bot-item { display: flex; align-items: center; justify-content: space-between; background: var(--card); padding: 16px; border-radius: 14px; margin-bottom: 10px; border: 1px solid var(--border); cursor: pointer; transition: 0.2s; }
-        .bot-item.selected { border-color: var(--primary); box-shadow: 0 0 15px rgba(59,130,246,0.15); }
-        .bot-icon { width: 40px; height: 40px; background: rgba(59,130,246,0.1); border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 20px; }
-        .bot-info { flex: 1; margin-left: 12px; }
-        .bot-name { font-weight: bold; font-size: 15px; }
-        .bot-status { font-size: 12px; color: var(--green); }
+        /* TOGGLES */
+        .toggle { display: flex; justify-content: space-between; align-items: center; background: rgba(255,255,255,0.03); padding: 10px; border-radius: 8px; margin-top: 8px; }
+        .toggle span { font-size: 13px; font-weight: 500; }
+        input[type="checkbox"] { width: 20px; height: 20px; accent-color: var(--blue); margin: 0; }
 
-        /* BOTTOM NAV */
-        .navbar { position: fixed; bottom: 0; left: 0; right: 0; background: rgba(24,24,27,0.95); backdrop-filter: blur(10px); border-top: 1px solid var(--border); display: flex; justify-content: space-around; padding: 12px 0; z-index: 100; }
-        .nav-item { display: flex; flex-direction: column; align-items: center; gap: 4px; color: var(--sub); cursor: pointer; font-size: 10px; width: 60px; }
-        .nav-item.active { color: var(--primary); }
-        .nav-icon { font-size: 20px; margin-bottom: 2px; }
+        /* КНОПКИ */
+        .btn-row { display: flex; gap: 10px; margin-top: 12px; }
+        button { flex: 1; padding: 14px; border-radius: 12px; border: none; font-weight: bold; cursor: pointer; color: white; font-size: 14px; transition: opacity 0.2s; }
+        button:active { opacity: 0.8; transform: scale(0.98); }
+        
+        .btn-save { background: var(--green); width: 100%; margin-top: 10px; font-size: 16px; }
+        .btn-stop { background: rgba(218, 54, 51, 0.1); border: 1px solid var(--red); color: var(--red); }
+        .btn-add { background: var(--blue); }
+        .btn-stats { background: #30363d; color: var(--text); border: 1px solid #8b949e; }
 
-        /* BUTTONS */
-        .btn { width: 100%; padding: 16px; border-radius: 12px; border: none; font-weight: bold; font-size: 15px; cursor: pointer; color: white; margin-top: 10px; }
-        .btn-primary { background: var(--primary); }
-        .btn-danger { background: rgba(239,68,68,0.1); color: var(--red); border: 1px solid var(--red); }
-        .fab { position: fixed; bottom: 85px; right: 20px; width: 50px; height: 50px; border-radius: 25px; background: var(--primary); color: white; display: flex; align-items: center; justify-content: center; font-size: 24px; box-shadow: 0 4px 15px rgba(59,130,246,0.4); cursor: pointer; z-index: 90; }
-
+        .hint { font-size: 10px; color: var(--sub); margin-top: 6px; line-height: 1.4; }
     </style>
 </head>
 <body>
 
     <div class="header">
-        <div class="title">Saraf Ecosystem</div>
-        <div class="subtitle" id="active_bot_label">Active: Main Bot</div>
+        <div>
+            <div style="font-size: 20px; font-weight: 800;">SARAF V44</div>
+            <div style="font-size: 12px; color: var(--sub);">Full Control Panel</div>
+        </div>
+        <div class="badge">UPDATED</div>
     </div>
 
-    <div id="page-home" class="page active">
-        <div class="card">
-            <div class="card-header"><span class="card-title">Profit Analysis (Demo)</span></div>
-            <div class="chart-container">
-                <div class="bar" style="height: 30%"></div>
-                <div class="bar" style="height: 50%"></div>
-                <div class="bar" style="height: 40%"></div>
-                <div class="bar" style="height: 70%"></div>
-                <div class="bar" style="height: 60%"></div>
-                <div class="bar" style="height: 90%"></div>
-                <div class="bar" style="height: 55%"></div>
-            </div>
-            <div class="stat-row">
-                <div class="stat-item">
-                    <div class="stat-val" style="color: var(--green)">+12.5%</div>
-                    <div class="stat-label">PnL (7d)</div>
-                </div>
-                <div class="stat-item">
-                    <div class="stat-val">48</div>
-                    <div class="stat-label">Trades</div>
-                </div>
-                <div class="stat-item">
-                    <div class="stat-val">1,250$</div>
-                    <div class="stat-label">Volume</div>
-                </div>
-            </div>
+    <div class="card">
+        <h3>⚡ Параметры Входа</h3>
+        <div class="input-box" style="margin-bottom: 12px;">
+            <label>Торговая пара (SYMBOL)</label>
+            <input type="text" id="symbol" value="ETH/USDC" style="color: var(--blue); font-weight: bold; font-size: 16px;">
         </div>
-
-        <div class="card">
-            <div class="card-header"><span class="card-title">Recent Activity</span></div>
-            <div style="font-size: 13px; color: var(--sub);">
-                <div style="padding: 8px 0; border-bottom: 1px solid var(--border); display:flex; justify-content:space-between;">
-                    <span>🟢 BUY ETH/USDC</span> <span>10:42</span>
-                </div>
-                <div style="padding: 8px 0; border-bottom: 1px solid var(--border); display:flex; justify-content:space-between;">
-                    <span>🔴 SELL BTC/USDC</span> <span>09:15</span>
-                </div>
-                <div style="padding: 8px 0; display:flex; justify-content:space-between;">
-                    <span>🟢 BUY SOL/USDC</span> <span>Yesterday</span>
-                </div>
-            </div>
+        <div class="grid">
+            <div class="input-box"><label>Лот ($)</label><input type="number" id="amount" value="10"></div>
+            <div class="input-box"><label>Martingale (x)</label><input type="number" id="mart" value="1.5"></div>
+            <div class="input-box"><label>Drop %</label><input type="number" id="drop" value="0.35"></div>
+            <div class="input-box"><label>Take Profit %</label><input type="number" id="tp" value="0.5"></div>
         </div>
     </div>
 
-    <div id="page-bots" class="page">
-        <div id="bot-list">
-            <div class="bot-item selected" onclick="selectBot('MAIN', this)">
-                <div class="bot-icon">💎</div>
-                <div class="bot-info">
-                    <div class="bot-name">Main Bot</div>
-                    <div class="bot-status">● Trading ETH/USDC</div>
-                </div>
-            </div>
+    <div class="card">
+        <h3>📏 Диапазон торгов</h3>
+        <div class="grid">
+            <div class="input-box"><label>Min Цена (0=Выкл)</label><input type="number" id="min_p" value="0"></div>
+            <div class="input-box"><label>Max Цена (0=Выкл)</label><input type="number" id="max_p" value="0"></div>
         </div>
-        <div style="text-align: center; color: var(--sub); font-size: 12px; margin-top: 20px;">
-            Tap '+' to add a new strategy
+        <div class="hint">Бот не будет покупать, если цена выйдет за эти пределы.</div>
+    </div>
+
+    <div class="card">
+        <h3>🌊 Trailing Profit</h3>
+        <div class="toggle">
+            <span>Включить Trailing</span>
+            <input type="checkbox" id="trail_on">
+        </div>
+        <div class="input-box" style="margin-top: 8px;">
+            <label>Отклонение (Deviation %)</label>
+            <input type="number" id="trail_dev" value="0.1" placeholder="0.1">
+        </div>
+        <div class="hint">
+            При включении бот будет "тянуть" прибыль вверх и продаст только при откате цены назад.
         </div>
     </div>
 
-    <div id="page-settings" class="page">
-        <div class="card">
-            <div class="card-header"><span class="card-title">Strategy Config</span></div>
-            <div style="margin-bottom: 12px;">
-                <label>Active Bot ID</label>
-                <input type="text" id="bot_id_input" value="MAIN" readonly style="color: var(--sub); border: none; background: transparent; padding: 0;">
-            </div>
-            <div style="margin-bottom: 12px;">
-                <label>Pair</label>
-                <input type="text" id="symbol" value="ETH/USDC">
-            </div>
-            <div class="grid">
-                <div><label>Order $</label><input type="number" id="amount" value="10"></div>
-                <div><label>Martingale</label><input type="number" id="mart" value="1.5"></div>
-                <div><label>Drop %</label><input type="number" id="drop" value="0.35"></div>
-                <div><label>TP %</label><input type="number" id="tp" value="0.5"></div>
-            </div>
+    <div class="card">
+        <h3>🛡️ Риск-менеджмент</h3>
+        <div class="grid">
+            <div class="input-box"><label>Stop Loss %</label><input type="number" id="sl" value="0"></div>
+            <div class="input-box"><label>RSI Limit (<)</label><input type="number" id="rsi" value="30"></div>
         </div>
-
-        <div class="card">
-            <div class="card-header"><span class="card-title">Risk & Limits</span></div>
-            <div class="grid">
-                <div><label>Min Price</label><input type="number" id="min_p" value="0"></div>
-                <div><label>Max Price</label><input type="number" id="max_p" value="0"></div>
-                <div><label>Trailing Dev</label><input type="number" id="trail" value="0.1"></div>
-                <div><label>Stop Loss</label><input type="number" id="sl" value="0"></div>
-            </div>
+        <div class="toggle">
+            <span>Использовать RSI фильтр</span>
+            <input type="checkbox" id="rsi_on">
         </div>
-
-        <button class="btn btn-primary" onclick="saveConfig()">SAVE & DEPLOY</button>
-        <button class="btn btn-danger" onclick="stopBot()">STOP THIS BOT</button>
     </div>
 
-    <div class="fab" onclick="addNewBot()">+</div>
+    <button class="btn-save" onclick="send('update')">
+        💾 СОХРАНИТЬ И ЗАПУСТИТЬ
+    </button>
 
-    <div class="navbar">
-        <div class="nav-item active" onclick="switchTab('home')">
-            <div class="nav-icon">📊</div>
-            <div>Stats</div>
-        </div>
-        <div class="nav-item" onclick="switchTab('bots')">
-            <div class="nav-icon">🤖</div>
-            <div>Bots</div>
-        </div>
-        <div class="nav-item" onclick="switchTab('settings')">
-            <div class="nav-icon">⚙️</div>
-            <div>Config</div>
-        </div>
+    <div class="btn-row">
+        <button class="btn-add" onclick="send('create_bot')">➕ Новый Бот</button>
+        <button class="btn-stats" onclick="send('get_stats')">📊 Отчет</button>
+    </div>
+    
+    <div class="btn-row">
+        <button class="btn-stop" onclick="send('stop')">🛑 СТОП</button>
+        <button class="btn-stop" onclick="send('sell_all')" style="border-color: #d29922; color: #d29922;">🚨 ПРОДАТЬ ВСЁ</button>
     </div>
 
     <script>
         const tg = window.Telegram.WebApp;
         tg.expand();
 
-        // Локальное состояние (список ботов для UI)
-        let bots = [{id: 'MAIN', name: 'Main Bot', pair: 'ETH/USDC'}];
-
-        function switchTab(tabName) {
-            // Haptic
-            if(tg.HapticFeedback) tg.HapticFeedback.selectionChanged();
-
-            // Скрыть все страницы
-            document.querySelectorAll('.page').forEach(el => el.classList.remove('active'));
-            document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
-
-            // Показать нужную
-            document.getElementById('page-' + tabName).classList.add('active');
-            
-            // Подсветка иконки (простой способ, в реале лучше по ID)
-            const index = ['home', 'bots', 'settings'].indexOf(tabName);
-            document.querySelectorAll('.nav-item')[index].classList.add('active');
-
-            // Скрыть кнопку "+" если не вкладка Боты
-            const fab = document.querySelector('.fab');
-            if (tabName === 'bots') fab.style.display = 'flex';
-            else fab.style.display = 'none';
-        }
-
-        function addNewBot() {
+        // Анимация вибрации
+        function haptic() {
             if(tg.HapticFeedback) tg.HapticFeedback.impactOccurred('medium');
-            
-            const newId = 'BOT_' + Math.floor(Math.random() * 1000);
-            const newBot = {id: newId, name: 'New Bot', pair: 'BTC/USDC'};
-            bots.push(newBot);
-            
-            renderBotList();
-            
-            // Сразу переходим к настройке нового
-            selectBot(newId);
-            switchTab('settings');
         }
 
-        function renderBotList() {
-            const container = document.getElementById('bot-list');
-            container.innerHTML = '';
-            
-            bots.forEach(bot => {
-                const div = document.createElement('div');
-                div.className = `bot-item ${document.getElementById('bot_id_input').value === bot.id ? 'selected' : ''}`;
-                div.onclick = () => selectBot(bot.id, div);
-                div.innerHTML = `
-                    <div class="bot-icon">🤖</div>
-                    <div class="bot-info">
-                        <div class="bot-name">${bot.id === 'MAIN' ? 'Main Strategy' : 'Custom Bot'}</div>
-                        <div class="bot-status" style="font-size:10px; color: #a1a1aa;">ID: ${bot.id}</div>
-                    </div>
-                `;
-                container.appendChild(div);
-            });
-        }
+        function send(action) {
+            haptic();
 
-        function selectBot(id, element) {
-            document.getElementById('bot_id_input').value = id;
-            document.getElementById('active_bot_label').innerText = 'Active: ' + id;
-            
-            // Визуальное выделение
-            document.querySelectorAll('.bot-item').forEach(el => el.classList.remove('selected'));
-            if(element) element.classList.add('selected');
-            else renderBotList(); // Перерисовка если element не передан
-        }
-
-        function saveConfig() {
-            if(tg.HapticFeedback) tg.HapticFeedback.notificationOccurred('success');
-            
             const data = {
-                action: 'update_bot',
-                bot_id: document.getElementById('bot_id_input').value,
+                action: action,
                 symbol: document.getElementById('symbol').value.toUpperCase(),
                 amount: parseFloat(document.getElementById('amount').value),
                 mart: parseFloat(document.getElementById('mart').value),
                 drop: parseFloat(document.getElementById('drop').value),
                 tp: parseFloat(document.getElementById('tp').value),
-                min_p: parseFloat(document.getElementById('min_p').value),
-                max_p: parseFloat(document.getElementById('max_p').value),
-                trail: parseFloat(document.getElementById('trail').value),
-                sl: parseFloat(document.getElementById('sl').value)
+                
+                // Новые функции
+                range_min: parseFloat(document.getElementById('min_p').value),
+                range_max: parseFloat(document.getElementById('max_p').value),
+                stop_loss: parseFloat(document.getElementById('sl').value),
+                rsi_limit: parseFloat(document.getElementById('rsi').value),
+                rsi_enable: document.getElementById('rsi_on').checked,
+                
+                trailing_enable: document.getElementById('trail_on').checked,
+                trailing_dev: parseFloat(document.getElementById('trail_dev').value)
             };
             
             tg.sendData(JSON.stringify(data));
-            // Не закрываем окно, чтобы можно было настроить другого бота!
-            // tg.close(); 
+            if(action === 'update' || action === 'stop') tg.close();
         }
-
-        function stopBot() {
-            const id = document.getElementById('bot_id_input').value;
-            tg.sendData(JSON.stringify({action: 'stop_bot', bot_id: id}));
-        }
-
-        // Init
-        switchTab('home');
-        renderBotList();
-
     </script>
 </body>
 </html>
