@@ -3,73 +3,93 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>ProTrade V56</title>
+    <title>ProTrade V65</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <script type="text/javascript" src="https://s3.tradingview.com/tv.js"></script>
     <style>
-        :root { --bg: #09090b; --card: #18181b; --text: #fafafa; --sub: #a1a1aa; --primary: #3b82f6; --green: #22c55e; --red: #ef4444; --border: #27272a; }
+        :root { 
+            --bg: #09090b; 
+            --card: #18181b; 
+            --text: #fafafa; 
+            --sub: #a1a1aa; 
+            --primary: #8b5cf6; /* Фиолетовый для RSI */
+            --blue: #3b82f6;
+            --green: #22c55e; 
+            --red: #ef4444; 
+            --border: #27272a; 
+        }
         body { background: var(--bg); color: var(--text); font-family: -apple-system, sans-serif; margin: 0; padding: 0; padding-bottom: 90px; }
         
-        .header { padding: 15px 20px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; }
+        /* HEADER */
+        .header { padding: 15px 20px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; background: linear-gradient(180deg, rgba(139,92,246,0.1) 0%, rgba(9,9,11,0) 100%); }
         .title { font-size: 18px; font-weight: 800; }
-        
+        .badge { font-size: 10px; background: rgba(139,92,246,0.2); color: var(--primary); padding: 4px 8px; border-radius: 6px; font-weight: bold; border: 1px solid rgba(139,92,246,0.4); }
+
         .page { display: none; padding: 16px; animation: fade 0.2s; }
         .page.active { display: block; }
         @keyframes fade { from{opacity:0} to{opacity:1} }
 
         .card { background: var(--card); border: 1px solid var(--border); border-radius: 14px; padding: 16px; margin-bottom: 12px; }
-        .card-header { font-size: 12px; color: var(--sub); text-transform: uppercase; margin-bottom: 10px; font-weight: 700; }
+        .card-header { font-size: 12px; color: var(--sub); text-transform: uppercase; margin-bottom: 10px; font-weight: 700; display: flex; justify-content: space-between; }
 
         .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
         label { display: block; font-size: 10px; color: var(--sub); margin-bottom: 4px; }
-        input { width: 100%; background: #000; border: 1px solid var(--border); color: white; padding: 12px; border-radius: 8px; font-size: 14px; outline: none; }
+        input { width: 100%; background: #000; border: 1px solid var(--border); color: white; padding: 12px; border-radius: 8px; font-size: 14px; outline: none; box-sizing: border-box; transition: 0.2s; }
         input:focus { border-color: var(--primary); }
 
+        /* TOGGLES */
+        .toggle-row { display: flex; justify-content: space-between; align-items: center; background: rgba(0,0,0,0.3); padding: 10px; border-radius: 8px; margin-top: 5px; }
+        input[type="checkbox"] { width: 20px; height: 20px; margin: 0; accent-color: var(--primary); }
+
+        /* LIST */
         .bot-item { display: flex; align-items: center; background: var(--card); padding: 12px; border-radius: 10px; margin-bottom: 8px; border: 1px solid var(--border); cursor: pointer; }
-        .bot-item.selected { border-color: var(--primary); background: rgba(59,130,246,0.05); }
+        .bot-item.selected { border-color: var(--primary); background: rgba(139,92,246,0.05); }
         .dot { width: 8px; height: 8px; border-radius: 50%; margin-right: 10px; }
         .dot.on { background: var(--green); box-shadow: 0 0 5px var(--green); }
         .dot.off { background: var(--red); opacity: 0.5; }
 
-        /* TRAILING TOGGLE */
-        .toggle-row { display: flex; justify-content: space-between; align-items: center; background: #000; padding: 10px; border-radius: 8px; margin-top: 5px; }
-        .toggle-row input { width: 20px; height: 20px; margin: 0; }
-
+        /* MODAL */
         #chart-modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 1000; padding-top: 50px; }
         #chart-content { height: 70%; width: 95%; margin: 0 auto; border: 1px solid var(--border); border-radius: 12px; overflow: hidden; }
         .close-chart { position: absolute; top: 15px; right: 20px; font-size: 30px; color: white; cursor: pointer; }
 
+        /* BUTTONS */
         .btn { width: 100%; padding: 14px; border-radius: 10px; border: none; font-weight: 700; cursor: pointer; color: white; margin-top: 8px; font-size: 14px; }
-        .btn-save { background: var(--primary); }
+        .btn-save { background: var(--blue); }
         .btn-start { background: var(--green); color: #000; }
         .btn-stop { background: rgba(239,68,68,0.15); color: var(--red); border: 1px solid var(--red); }
-        .btn-chart { background: #27272a; border: 1px solid var(--primary); color: var(--primary); }
+        .btn-chart { background: #27272a; border: 1px solid var(--sub); color: var(--text); }
         .btn-panic { background: var(--red); color: white; margin-top: 20px; box-shadow: 0 4px 15px rgba(239,68,68,0.3); }
 
         .fab { position: fixed; bottom: 85px; right: 20px; width: 44px; height: 44px; background: var(--primary); border-radius: 50%; color: white; display: flex; align-items: center; justify-content: center; font-size: 24px; box-shadow: 0 4px 15px rgba(0,0,0,0.5); z-index: 100; }
         .navbar { position: fixed; bottom: 0; width: 100%; background: rgba(24,24,27,0.95); border-top: 1px solid var(--border); display: flex; justify-content: space-around; padding: 10px 0; z-index: 99; backdrop-filter: blur(10px); }
-        .nav-item { font-size: 9px; color: var(--sub); display: flex; flex-direction: column; align-items: center; opacity: 0.6; }
-        .nav-item.active { color: var(--primary); opacity: 1; }
+        .nav-item { font-size: 9px; color: var(--sub); display: flex; flex-direction: column; align-items: center; opacity: 0.6; transition: 0.2s; }
+        .nav-item.active { color: var(--primary); opacity: 1; transform: scale(1.1); }
         .nav-icon { font-size: 18px; margin-bottom: 2px; }
     </style>
 </head>
 <body>
+    
     <div id="chart-modal">
         <div class="close-chart" onclick="closeChart()">×</div>
         <div id="chart-content"></div>
     </div>
 
     <div class="header">
-        <div><div class="title">ProTrade V56</div><div style="font-size: 11px; color: var(--sub);" id="active_label">Loading...</div></div>
-        <div style="font-size:10px; color:var(--primary); border:1px solid var(--primary); padding:4px 8px; border-radius:6px;">TRAILING</div>
+        <div>
+            <div class="title">ProTrade V65</div>
+            <div style="font-size: 11px; color: var(--sub);" id="active_label">Loading...</div>
+        </div>
+        <div class="badge">5m SCALPER</div>
     </div>
 
     <div id="page-home" class="page active">
         <div class="card">
-            <div class="card-header">Session Profit</div>
-            <div style="font-size: 28px; font-weight: 700;">$ <span id="total_pnl">0.00</span></div>
+            <div class="card-header"><span>Session PnL</span> <span>Live</span></div>
+            <div style="font-size: 32px; font-weight: 700; margin: 10px 0;">$ <span id="total_pnl">0.00</span></div>
+            <div style="font-size: 11px; color: var(--sub);">Bot monitors 5m candles. Updates every 12s.</div>
         </div>
-        <button class="btn btn-chart" onclick="openChart()">📈 OPEN CHART</button>
+        <button class="btn btn-chart" onclick="openChart()">📈 VIEW CHART</button>
     </div>
 
     <div id="page-bots" class="page">
@@ -78,43 +98,50 @@
 
     <div id="page-settings" class="page">
         <input type="hidden" id="bot_id">
+        
         <div class="card">
-            <div class="card-header">Main Config</div>
+            <div class="card-header"><span>Market Setup</span></div>
             <div style="margin-bottom: 10px;">
-                <label>Pair</label><input type="text" id="symbol" style="color: var(--primary); font-weight: bold;">
+                <label>Pair (e.g. ETH/USDT)</label>
+                <input type="text" id="symbol" style="color: var(--primary); font-weight: bold; font-size: 16px;">
             </div>
             <div class="grid">
                 <div><label>Order $</label><input type="number" id="amount"></div>
-                <div><label>DCA Multiplier (x)</label><input type="number" id="dca_mult" placeholder="1.5"></div>
-                <div><label>Step Drop %</label><input type="number" id="drop"></div>
-                <div><label>Target Profit %</label><input type="number" id="tp"></div>
+                <div><label>DCA Mult (x)</label><input type="number" id="dca_mult" placeholder="1.5"></div>
+                <div><label>Price Drop %</label><input type="number" id="drop"></div>
+                <div><label>Take Profit %</label><input type="number" id="tp"></div>
+            </div>
+        </div>
+
+        <div class="card" style="border-color: var(--primary);">
+            <div class="card-header"><span style="color: var(--primary);">🧠 RSI Strategy (5m)</span></div>
+            <div class="toggle-row">
+                <label style="margin:0; font-weight:bold;">Enable RSI Filter</label>
+                <input type="checkbox" id="rsi_on">
+            </div>
+            <div style="margin-top: 10px;">
+                <label>Max RSI Limit (Buy if lower than)</label>
+                <input type="number" id="rsi_limit" placeholder="30" style="border-color: var(--primary);">
+            </div>
+            <div style="font-size: 10px; color: var(--sub); margin-top: 5px;">
+                Bot analyzes strict 5-minute candles. If RSI > Limit, it waits.
             </div>
         </div>
         
         <div class="card">
-            <div class="card-header">Smart Exit & Risk</div>
-            
-            <div class="toggle-row">
-                <label style="margin:0; font-size: 13px; font-weight:bold; color: var(--primary);">🌊 Enable Trailing Profit</label>
-                <input type="checkbox" id="trail_on">
-            </div>
-            <div style="margin: 8px 0 15px 0;">
-                <label>Trailing Deviation % (Pullback)</label>
-                <input type="number" id="trail_dev" placeholder="0.1">
-            </div>
-
+            <div class="card-header"><span>Risk & Isolation</span></div>
             <div style="margin-bottom: 10px;">
-                <label style="color: var(--green);">💰 Max Budget ($)</label>
+                <label style="color: var(--green);">💰 Isolated Budget ($)</label>
                 <input type="number" id="max_budget" style="border-color: var(--green);">
             </div>
             
-            <div class="grid">
-                <div><label>RSI Limit (<)</label><input type="number" id="rsi_limit"></div>
-                <div><label>Stop Loss %</label><input type="number" id="sl"></div>
+            <div class="toggle-row">
+                <label>🌊 Trailing Profit</label>
+                <input type="checkbox" id="trail_on">
             </div>
-            <div class="toggle-row" style="background:transparent; padding-left:0;">
-                <label style="margin:0;">🧠 Use RSI Filter</label>
-                <input type="checkbox" id="rsi_on">
+            <div class="grid" style="margin-top: 10px;">
+                <div><label>Trail Dev %</label><input type="number" id="trail_dev"></div>
+                <div><label>Stop Loss %</label><input type="number" id="sl"></div>
             </div>
         </div>
         
@@ -123,9 +150,9 @@
             <button class="btn btn-start" onclick="send('start')">▶ START</button>
         </div>
         
-        <button class="btn btn-stop" onclick="send('stop')">⏹ STOP</button>
+        <button class="btn btn-stop" onclick="send('stop')">⏹ STOP BOT</button>
         <button class="btn btn-panic" onclick="forceExit()">📉 FORCE EXIT (SELL BAG)</button>
-        <button class="btn btn-stop" onclick="deleteBot()" style="margin-top: 15px; border:none; background:transparent; color:#666;">Delete</button>
+        <button class="btn btn-stop" onclick="deleteBot()" style="margin-top: 20px; background: transparent; border: none; color: #555;">Delete Strategy</button>
     </div>
 
     <div class="fab" onclick="addBot()">+</div>
@@ -139,99 +166,137 @@
     <script>
         const tg = window.Telegram.WebApp;
         tg.expand();
-        // Загружаем V56 или создаем дефолт
-        let bots = JSON.parse(localStorage.getItem('my_bots_v56')) || [
-            {id: 'MAIN', name: 'Main Bot', status: false, config: {symbol: 'ETH/USDC', amount: 10, dca_mult: 1.5, drop: 0.35, tp: 0.5, trail_on: false, trail_dev: 0.1, sl: 0, rsi: false, rsi_limit: 30, max_budget: 50}}
+
+        // Load V65 bots
+        let bots = JSON.parse(localStorage.getItem('my_bots_v65')) || [
+            {id: 'MAIN', name: 'Main Bot', status: false, config: {
+                symbol: 'ETH/USDT', amount: 10, dca_mult: 1.5, drop: 0.35, tp: 0.5, 
+                rsi_enable: true, rsi_limit: 30, // Default RSI ON
+                max_budget: 50, trail_on: false, trail_dev: 0.1, sl: 0
+            }}
         ];
 
-        function saveLocal() { localStorage.setItem('my_bots_v56', JSON.stringify(bots)); }
+        function saveLocal() { localStorage.setItem('my_bots_v65', JSON.stringify(bots)); }
+
         function nav(page) {
             document.querySelectorAll('.page').forEach(e => e.classList.remove('active'));
             document.querySelectorAll('.nav-item').forEach(e => e.classList.remove('active'));
             document.getElementById('page-'+page).classList.add('active');
+            
             const idx = ['home', 'bots', 'settings'].indexOf(page);
             document.querySelectorAll('.nav-item')[idx].classList.add('active');
             document.querySelector('.fab').style.display = (page === 'bots') ? 'flex' : 'none';
         }
+
         function openChart() {
             const activeId = document.getElementById('bot_id').value || 'MAIN';
             const bot = bots.find(b => b.id === activeId) || bots[0];
             const pair = bot.config.symbol.replace('/', '').toUpperCase();
             document.getElementById('chart-modal').style.display = 'block';
-            new TradingView.widget({ "width": "100%", "height": "100%", "symbol": "MEXC:" + pair, "interval": "5", "timezone": "Etc/UTC", "theme": "dark", "style": "1", "locale": "en", "toolbar_bg": "#f1f3f6", "enable_publishing": false, "hide_top_toolbar": true, "container_id": "chart-content" });
+            
+            new TradingView.widget({
+                "width": "100%", "height": "100%", "symbol": "MEXC:" + pair,
+                "interval": "5", // 5 MINUTE CHART DEFAULT
+                "timezone": "Etc/UTC", "theme": "dark", "style": "1", "locale": "en",
+                "toolbar_bg": "#f1f3f6", "enable_publishing": false, "hide_top_toolbar": true,
+                "container_id": "chart-content"
+            });
         }
         function closeChart() { document.getElementById('chart-modal').style.display = 'none'; }
-        
+
         function renderBots() {
             const list = document.getElementById('bot-list'); list.innerHTML = '';
             bots.forEach(b => {
                 const el = document.createElement('div');
                 el.className = `bot-item ${document.getElementById('bot_id').value === b.id ? 'selected' : ''}`;
-                el.innerHTML = `<div class="dot ${b.status?'on':'off'}"></div><div><b>${b.name}</b><div style="font-size:10px; color:#888">${b.config.symbol}</div></div>`;
+                el.innerHTML = `
+                    <div class="dot ${b.status?'on':'off'}"></div>
+                    <div>
+                        <b>${b.name}</b>
+                        <div style="font-size:10px; color:#888">
+                            ${b.config.symbol} • RSI < ${b.config.rsi_limit || 30}
+                        </div>
+                    </div>`;
                 el.onclick = () => openSettings(b.id);
                 list.appendChild(el);
             });
         }
+
         function addBot() {
             const id = 'BOT_' + Math.floor(Math.random()*9999);
-            bots.push({id: id, name: 'Strategy '+bots.length, status: false, config: {symbol: 'BTC/USDC', amount: 10, dca_mult: 1.5, drop: 0.35, tp: 0.5, trail_on: false, trail_dev: 0.1, sl: 0, rsi: false, rsi_limit: 30, max_budget: 50}});
+            bots.push({id: id, name: 'Strategy '+bots.length, status: false, config: {
+                symbol: 'BTC/USDT', amount: 10, dca_mult: 1.5, drop: 0.35, tp: 0.5, 
+                rsi_enable: true, rsi_limit: 30, max_budget: 50, trail_on: false, trail_dev: 0.1, sl: 0
+            }});
             saveLocal(); renderBots(); openSettings(id);
         }
+
         function openSettings(id) {
             const bot = bots.find(b => b.id === id);
             document.getElementById('bot_id').value = bot.id;
             document.getElementById('active_label').innerText = bot.name;
             const c = bot.config;
+            
             document.getElementById('symbol').value = c.symbol;
             document.getElementById('amount').value = c.amount;
-            // DCA MULTIPLIER
-            document.getElementById('dca_mult').value = c.dca_mult || 1.5;
+            document.getElementById('dca_mult').value = c.dca_mult;
             document.getElementById('drop').value = c.drop;
             document.getElementById('tp').value = c.tp;
             
-            // TRAILING
+            // RSI
+            document.getElementById('rsi_limit').value = c.rsi_limit || 30;
+            document.getElementById('rsi_on').checked = c.rsi_enable !== false; // Default true if undefined
+            
+            document.getElementById('max_budget').value = c.max_budget || 50;
             document.getElementById('trail_on').checked = c.trail_on || false;
             document.getElementById('trail_dev').value = c.trail_dev || 0.1;
-            
-            document.getElementById('rsi_limit').value = c.rsi_limit || 30;
             document.getElementById('sl').value = c.sl || 0;
-            document.getElementById('max_budget').value = c.max_budget || 0;
-            document.getElementById('rsi_on').checked = c.rsi || false;
+            
             nav('settings');
         }
+
         function deleteBot() {
             const id = document.getElementById('bot_id').value;
             if(id === 'MAIN') return alert("Cannot delete Main");
             if(confirm("Delete?")) { bots = bots.filter(b => b.id !== id); saveLocal(); send('stop'); renderBots(); nav('bots'); }
         }
+
         function forceExit() {
-            if(confirm("⚠️ ВНИМАНИЕ!\nПродать инвентарь бота по рынку?")) send('force_exit');
+            if(confirm("⚠️ SELL ALL INVENTORY NOW?")) send('force_exit');
         }
+
         function send(action) {
             if(tg.HapticFeedback) tg.HapticFeedback.notificationOccurred('success');
             const id = document.getElementById('bot_id').value;
             const bot = bots.find(b => b.id === id);
+            
             bot.config = {
                 symbol: document.getElementById('symbol').value.toUpperCase(),
                 amount: parseFloat(document.getElementById('amount').value),
-                dca_mult: parseFloat(document.getElementById('dca_mult').value), // NEW NAME
+                dca_mult: parseFloat(document.getElementById('dca_mult').value),
                 drop: parseFloat(document.getElementById('drop').value),
                 tp: parseFloat(document.getElementById('tp').value),
                 
-                trail_on: document.getElementById('trail_on').checked, // NEW
-                trail_dev: parseFloat(document.getElementById('trail_dev').value),
-                
+                rsi_enable: document.getElementById('rsi_on').checked,
                 rsi_limit: parseFloat(document.getElementById('rsi_limit').value),
-                sl: parseFloat(document.getElementById('sl').value),
+                
                 max_budget: parseFloat(document.getElementById('max_budget').value),
-                rsi: document.getElementById('rsi_on').checked
+                trail_on: document.getElementById('trail_on').checked,
+                trail_dev: parseFloat(document.getElementById('trail_dev').value),
+                sl: parseFloat(document.getElementById('sl').value)
             };
+
             if(action === 'start') bot.status = true;
             if(action === 'stop' || action === 'force_exit') bot.status = false;
+            
             saveLocal(); renderBots();
+            
+            // Send to Python
             tg.sendData(JSON.stringify({ action: action, bot_id: id, ...bot.config }));
         }
-        renderBots(); nav('home');
+
+        renderBots();
+        nav('home');
     </script>
 </body>
 </html>
