@@ -3,310 +3,215 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>ProTrade V71</title>
+    <title>ProTrade V72</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
-        :root {
-            --bg: #0f172a; /* Глубокий синий */
-            --card: #1e293b;
-            --text: #f8fafc;
-            --text-sub: #94a3b8;
-            --accent: #3b82f6; /* Синий как у Coinbase */
-            --green: #10b981;
-            --red: #ef4444;
-            --border: #334155;
-        }
-
-        body { background: var(--bg); color: var(--text); font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; margin: 0; padding-bottom: 80px; -webkit-tap-highlight-color: transparent; }
+        :root { --bg: #0f172a; --card: #1e293b; --text: #f8fafc; --text-sub: #94a3b8; --accent: #3b82f6; --green: #10b981; --red: #ef4444; --border: #334155; }
+        body { background: var(--bg); color: var(--text); font-family: sans-serif; margin: 0; padding-bottom: 80px; }
         
-        /* HEADER */
-        .header { padding: 20px; background: rgba(15, 23, 42, 0.95); backdrop-filter: blur(10px); border-bottom: 1px solid var(--border); position: sticky; top: 0; z-index: 100; display: flex; justify-content: space-between; align-items: center; }
-        .header h1 { margin: 0; font-size: 18px; font-weight: 600; }
-        .sync-btn { background: var(--accent); color: white; border: none; padding: 6px 12px; border-radius: 20px; font-size: 12px; font-weight: 600; cursor: pointer; animation: pulse 2s infinite; }
-        @keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(59, 130, 246, 0.4); } 70% { box-shadow: 0 0 0 10px rgba(59, 130, 246, 0); } 100% { box-shadow: 0 0 0 0 rgba(59, 130, 246, 0); } }
+        .header { padding: 15px; background: rgba(15,23,42,0.95); position: sticky; top: 0; z-index: 100; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border); }
+        .sync-btn { background: var(--accent); color: white; border: none; padding: 8px 16px; border-radius: 20px; font-weight: bold; cursor: pointer; animation: pulse 2s infinite; }
+        @keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(59, 130, 246, 0.4); } 100% { box-shadow: 0 0 0 10px transparent; } }
 
-        /* TABS */
-        .tabs { display: flex; padding: 15px 15px 0; gap: 10px; overflow-x: auto; }
-        .tab { background: var(--card); padding: 8px 16px; border-radius: 20px; font-size: 13px; color: var(--text-sub); border: 1px solid var(--border); white-space: nowrap; cursor: pointer; transition: 0.2s; }
-        .tab.active { background: var(--text); color: var(--bg); border-color: var(--text); font-weight: 600; }
-
-        /* PAGES */
         .page { display: none; padding: 15px; animation: fadeIn 0.3s; }
         .page.active { display: block; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
 
-        /* CARDS */
         .card { background: var(--card); border-radius: 16px; padding: 16px; margin-bottom: 12px; border: 1px solid var(--border); }
         .card-title { font-size: 13px; color: var(--text-sub); margin-bottom: 10px; font-weight: 500; display: flex; justify-content: space-between; }
-        .big-val { font-size: 28px; font-weight: 700; letter-spacing: -0.5px; }
 
-        /* BOT LIST */
-        .bot-item { display: flex; justify-content: space-between; align-items: center; padding: 12px; border-bottom: 1px solid var(--border); cursor: pointer; }
-        .bot-item:last-child { border-bottom: none; }
-        .bot-icon { width: 32px; height: 32px; background: rgba(59, 130, 246, 0.1); border-radius: 8px; display: flex; align-items: center; justify-content: center; color: var(--accent); font-weight: bold; font-size: 10px; margin-right: 12px; }
-        .bot-info { flex-grow: 1; }
-        .bot-name { font-weight: 600; font-size: 14px; }
-        .bot-pair { font-size: 12px; color: var(--text-sub); }
-        .bot-status { font-size: 10px; padding: 4px 8px; border-radius: 6px; }
-        .status-on { background: rgba(16, 185, 129, 0.2); color: var(--green); }
-        .status-off { background: rgba(239, 68, 68, 0.2); color: var(--red); }
+        /* LOGS */
+        .log-box { font-family: monospace; font-size: 11px; color: var(--text-sub); max-height: 100px; overflow-y: auto; cursor: pointer; border: 1px dashed var(--border); padding: 5px; }
+        .log-item { margin-bottom: 4px; border-bottom: 1px solid #333; }
+        .log-time { color: var(--accent); }
+
+        /* FULL LOG MODAL */
+        #log-modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 200; padding: 20px; box-sizing: border-box; }
+        #full-log-content { background: #000; color: #0f0; font-family: monospace; height: 90%; overflow-y: scroll; padding: 10px; border: 1px solid #0f0; }
+        .close-modal { color: white; font-size: 30px; position: absolute; top: 10px; right: 20px; cursor: pointer; }
 
         /* INPUTS */
-        .form-group { margin-bottom: 12px; }
-        label { display: block; font-size: 11px; color: var(--text-sub); margin-bottom: 6px; }
-        input[type="text"], input[type="number"] { width: 100%; background: #0f172a; border: 1px solid var(--border); padding: 12px; border-radius: 10px; color: white; font-size: 14px; outline: none; box-sizing: border-box; }
-        input:focus { border-color: var(--accent); }
-        
-        .switch-row { display: flex; justify-content: space-between; align-items: center; padding: 8px 0; }
+        input[type="text"], input[type="number"] { width: 100%; background: #0f172a; border: 1px solid var(--border); padding: 12px; border-radius: 10px; color: white; font-size: 14px; box-sizing: border-box; margin-bottom: 10px; }
+        label { font-size: 11px; color: var(--text-sub); display: block; margin-bottom: 5px; }
+
+        /* BOT ITEM */
+        .bot-item { display: flex; justify-content: space-between; align-items: center; padding: 12px; border-bottom: 1px solid var(--border); cursor: pointer; }
+        .bot-status { font-size: 10px; padding: 4px 8px; border-radius: 6px; }
+        .status-on { background: rgba(16,185,129,0.2); color: var(--green); }
+        .status-off { background: rgba(239,68,68,0.2); color: var(--red); }
+
+        .fab { position: fixed; bottom: 90px; right: 20px; width: 50px; height: 50px; background: var(--accent); border-radius: 50%; color: white; display: flex; justify-content: center; align-items: center; font-size: 30px; box-shadow: 0 4px 15px rgba(59,130,246,0.4); }
+        .navbar { position: fixed; bottom: 0; width: 100%; background: var(--bg); border-top: 1px solid var(--border); display: flex; justify-content: space-around; padding: 12px 0; }
+        .nav-item.active { color: var(--accent); }
+        .nav-icon { font-size: 20px; display: block; }
+
+        .switch-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
         .switch { position: relative; display: inline-block; width: 40px; height: 22px; }
         .switch input { opacity: 0; width: 0; height: 0; }
         .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #334155; transition: .4s; border-radius: 22px; }
         .slider:before { position: absolute; content: ""; height: 18px; width: 18px; left: 2px; bottom: 2px; background-color: white; transition: .4s; border-radius: 50%; }
         input:checked + .slider { background-color: var(--accent); }
         input:checked + .slider:before { transform: translateX(18px); }
-
-        /* LOGS */
-        .log-box { font-family: monospace; font-size: 11px; color: var(--text-sub); max-height: 200px; overflow-y: auto; }
-        .log-item { margin-bottom: 4px; border-bottom: 1px solid #333; padding-bottom: 2px; }
-        .log-time { color: var(--accent); margin-right: 5px; }
-
-        /* ACTIONS */
-        .fab { position: fixed; bottom: 90px; right: 20px; width: 50px; height: 50px; background: var(--accent); border-radius: 50%; color: white; display: flex; align-items: center; justify-content: center; font-size: 24px; box-shadow: 0 4px 15px rgba(59, 130, 246, 0.4); cursor: pointer; z-index: 90; }
-        .btn-full { width: 100%; padding: 14px; background: var(--card); border: 1px solid var(--border); color: var(--text); border-radius: 12px; margin-top: 10px; font-weight: 600; cursor: pointer; }
-        .btn-danger { color: var(--red); border-color: rgba(239, 68, 68, 0.3); }
-
-        /* NAVBAR */
-        .navbar { position: fixed; bottom: 0; width: 100%; background: var(--bg); border-top: 1px solid var(--border); display: flex; justify-content: space-around; padding: 12px 0; z-index: 99; }
-        .nav-item { color: var(--text-sub); font-size: 10px; text-align: center; }
-        .nav-item.active { color: var(--accent); }
-        .nav-icon { font-size: 20px; display: block; margin-bottom: 2px; }
     </style>
 </head>
 <body>
 
+    <div id="log-modal">
+        <div class="close-modal" onclick="closeLog()">×</div>
+        <div style="color:white; margin-bottom:10px;">📜 ИСТОРИЯ СЕССИИ</div>
+        <div id="full-log-content"></div>
+    </div>
+
     <div class="header">
-        <h1>ProTrade V71</h1>
+        <div style="font-weight:bold;">ProTrade V72</div>
         <button class="sync-btn" onclick="syncServer()">☁ СИНХРОНИЗАЦИЯ</button>
     </div>
 
     <div id="page-dash" class="page active">
         <div class="card">
-            <div class="card-title">Общий баланс (Примерный)</div>
-            <div class="big-val">$ <span id="balance-display">0.00</span></div>
-            <div style="font-size: 11px; color: var(--green);">+2.4% за сегодня (Demo)</div>
+            <div class="card-title">Рост депозита</div>
+            <canvas id="equityChart" style="height:150px; width:100%;"></canvas>
         </div>
-        
         <div class="card">
-            <div class="card-title">График роста (Equity)</div>
-            <canvas id="equityChart" style="width:100%; height:150px;"></canvas>
-        </div>
-
-        <div class="card">
-            <div class="card-title">Живой Лог</div>
-            <div class="log-box" id="log-box">
-                <div class="log-item"><span class="log-time">12:00</span> Система готова.</div>
+            <div class="card-title">Логи (Нажми чтобы открыть) 🔍</div>
+            <div class="log-box" id="log-box" onclick="openLog()">
+                <div class="log-item"><span class="log-time">System:</span> Жду действий...</div>
             </div>
         </div>
     </div>
 
     <div id="page-bots" class="page">
-        <div class="card" style="padding: 0;">
-            <div id="bot-list-container"></div>
-        </div>
-        <div style="text-align: center; color: var(--text-sub); font-size: 11px; padding: 20px;">
-            Нажмите +, чтобы добавить бота.<br>Нажмите на бота для настройки.
-        </div>
+        <div class="card" id="bot-list-container" style="padding:0;"></div>
     </div>
 
     <div id="page-edit" class="page">
+        <input type="hidden" id="edit-id">
         <div class="card">
-            <input type="hidden" id="edit-id">
-            <div class="form-group">
-                <label>Валютная пара (без пробелов)</label>
-                <input type="text" id="edit-symbol" placeholder="ETH/USDT" value="ETH/USDT" style="font-weight: bold; color: var(--accent);">
-            </div>
+            <label>Пара (BTC/USDT)</label>
+            <input type="text" id="edit-symbol">
             <div class="switch-row">
-                <label style="font-size: 14px; color: white;">Включить бота</label>
+                <label>АКТИВЕН</label>
                 <label class="switch"><input type="checkbox" id="edit-status"><span class="slider"></span></label>
             </div>
         </div>
-
         <div class="card">
-            <div class="card-title">Стратегия входа</div>
-            <div class="switch-row">
-                <label>Умный фильтр тренда (EMA 200)</label>
-                <label class="switch"><input type="checkbox" id="edit-ema"><span class="slider"></span></label>
+            <div class="card-title">Вход</div>
+            <div class="grid" style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
+                <div><label>Сумма ($)</label><input type="number" id="edit-amount"></div>
+                <div><label>Шаг (%)</label><input type="number" id="edit-drop"></div>
             </div>
-            <div class="switch-row">
-                <label>Фильтр перекупленности (RSI)</label>
-                <label class="switch"><input type="checkbox" id="edit-rsi"><span class="slider"></span></label>
+            <div class="switch-row"><label>EMA 200 (Тренд)</label><label class="switch"><input type="checkbox" id="edit-ema"><span class="slider"></span></label></div>
+            <div class="switch-row"><label>RSI (Фильтр)</label><label class="switch"><input type="checkbox" id="edit-rsi"><span class="slider"></span></label></div>
+        </div>
+        <div class="card">
+            <div class="card-title">Выход и Риски</div>
+            <div class="grid" style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
+                <div><label>Тейк (%)</label><input type="number" id="edit-tp"></div>
+                <div><label style="color:var(--red);">Stop Loss (%)</label><input type="number" id="edit-sl"></div>
             </div>
-            <div class="form-group">
-                <label>Сумма первого ордера ($)</label>
-                <input type="number" id="edit-amount" value="10">
-            </div>
-            <div class="form-group">
-                <label>Шаг докупки при падении (%)</label>
-                <input type="number" id="edit-drop" value="0.5">
-            </div>
+            <div class="switch-row"><label>Trailing Profit</label><label class="switch"><input type="checkbox" id="edit-trail"><span class="slider"></span></label></div>
         </div>
 
-        <div class="card">
-            <div class="card-title">Стратегия выхода</div>
-            <div class="switch-row">
-                <label>Trailing Profit (Плавающий тейк)</label>
-                <label class="switch"><input type="checkbox" id="edit-trail"><span class="slider"></span></label>
-            </div>
-            <div class="form-group">
-                <label>Тейк-профит (%)</label>
-                <input type="number" id="edit-tp" value="0.7">
-            </div>
-        </div>
-
-        <button class="btn-full" onclick="saveBotInternal()" style="background: var(--text); color: var(--bg);">💾 ПРИМЕНИТЬ НАСТРОЙКИ</button>
-        <button class="btn-full" onclick="deleteBot()" style="background: transparent; color: var(--red); border-color: var(--border);">🗑 Удалить бота</button>
-        <button class="btn-full" onclick="nav('bots')" style="background: transparent;">← Назад к списку</button>
+        <button onclick="saveBotInternal()" style="width:100%; padding:15px; background:var(--text); border:none; border-radius:10px; font-weight:bold;">СОХРАНИТЬ В ЧЕРНОВИК</button>
+        <button onclick="deleteBot()" style="width:100%; padding:15px; background:transparent; border:1px solid var(--red); color:var(--red); border-radius:10px; margin-top:10px;">УДАЛИТЬ</button>
+        <button onclick="nav('bots')" style="width:100%; padding:15px; background:transparent; color:#555; border:none; margin-top:5px;">ОТМЕНА</button>
     </div>
 
     <div class="fab" onclick="addNewBot()">+</div>
-
     <div class="navbar">
-        <div class="nav-item active" onclick="nav('dash')"><span class="nav-icon">📊</span>Обзор</div>
-        <div class="nav-item" onclick="nav('bots')"><span class="nav-icon">🤖</span>Боты</div>
+        <div class="nav-item active" onclick="nav('dash')"><span class="nav-icon">📊</span></div>
+        <div class="nav-item" onclick="nav('bots')"><span class="nav-icon">🤖</span></div>
     </div>
 
     <script>
-        const tg = window.Telegram.WebApp; 
-        tg.expand();
+        const tg = window.Telegram.WebApp; tg.expand();
+        let bots = JSON.parse(localStorage.getItem('v72_bots')) || [];
+        let logs = [];
 
-        // --- DATA ---
-        let bots = JSON.parse(localStorage.getItem('v71_bots')) || [
-            {id: 'MAIN', symbol: 'BTC/USDT', status: false, amount: 10, drop: 0.35, tp: 0.5, ema: true, rsi: true, trail: false}
-        ];
-        
-        // --- NAVIGATION ---
+        // LOGGING
+        function log(msg) {
+            const time = new Date().toLocaleTimeString();
+            const line = `<div class="log-item"><span class="log-time">${time}</span> ${msg}</div>`;
+            logs.unshift(line);
+            document.getElementById('log-box').innerHTML = logs.slice(0, 5).join('');
+            document.getElementById('full-log-content').innerHTML = logs.join('');
+        }
+        function openLog() { document.getElementById('log-modal').style.display='block'; }
+        function closeLog() { document.getElementById('log-modal').style.display='none'; }
+
+        // NAV
         function nav(p) {
-            document.querySelectorAll('.page').forEach(e => e.classList.remove('active'));
+            document.querySelectorAll('.page').forEach(e=>e.classList.remove('active'));
             document.getElementById('page-'+p).classList.add('active');
-            document.querySelectorAll('.nav-item').forEach(e => e.classList.remove('active'));
-            // Simple logic for active tab highlight
-            if(p==='dash') document.querySelectorAll('.nav-item')[0].classList.add('active');
-            if(p==='bots') document.querySelectorAll('.nav-item')[1].classList.add('active');
-            
-            document.querySelector('.fab').style.display = (p === 'bots') ? 'flex' : 'none';
-            if(p === 'bots') renderBots();
+            document.querySelector('.fab').style.display = (p==='bots')?'flex':'none';
+            if(p==='bots') renderBots();
         }
 
-        // --- CHART ---
-        const ctx = document.getElementById('equityChart').getContext('2d');
-        const equityChart = new Chart(ctx, {
-            type: 'line',
-            data: {
-                labels: ['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Вс'],
-                datasets: [{
-                    label: 'Баланс ($)',
-                    data: [50, 52, 51.5, 54, 56, 55, 58], // Fake data for UI demo
-                    borderColor: '#3b82f6',
-                    backgroundColor: 'rgba(59, 130, 246, 0.1)',
-                    fill: true, tension: 0.4
-                }]
-            },
-            options: {
-                responsive: true,
-                plugins: { legend: { display: false } },
-                scales: { 
-                    x: { display: false }, 
-                    y: { display: false } 
-                }
-            }
-        });
-
-        // --- BOT MANAGER ---
+        // BOTS
         function renderBots() {
-            const list = document.getElementById('bot-list-container');
-            list.innerHTML = '';
+            const c = document.getElementById('bot-list-container'); c.innerHTML='';
             bots.forEach(b => {
-                const el = document.createElement('div');
-                el.className = 'bot-item';
-                el.innerHTML = `
-                    <div class="bot-icon">${b.symbol.substring(0,3)}</div>
-                    <div class="bot-info">
-                        <div class="bot-name">${b.symbol}</div>
-                        <div class="bot-pair">${b.status ? '● Работает' : '○ Пауза'} | $${b.amount}</div>
-                    </div>
-                    <div class="bot-status ${b.status ? 'status-on' : 'status-off'}">${b.status ? 'ON' : 'OFF'}</div>
-                `;
-                el.onclick = () => editBot(b.id);
-                list.appendChild(el);
+                const d = document.createElement('div'); d.className='bot-item';
+                d.innerHTML = `<div><b>${b.symbol}</b><br><span style="font-size:10px; color:#888">$${b.amount} | SL: ${b.sl}%</span></div>
+                               <div class="bot-status ${b.status?'status-on':'status-off'}">${b.status?'ON':'OFF'}</div>`;
+                d.onclick=()=>editBot(b.id); c.appendChild(d);
             });
         }
-
         function addNewBot() {
-            const id = 'BOT_' + Date.now();
-            bots.push({id: id, symbol: 'NEW/USDT', status: false, amount: 10, drop: 0.5, tp: 0.5, ema: true, rsi: true, trail: false});
-            localStorage.setItem('v71_bots', JSON.stringify(bots));
+            const id='BOT_'+Date.now();
+            bots.push({id:id, symbol:'BTC/USDT', status:false, amount:10, drop:0.5, tp:0.5, sl:5.0, ema:true, rsi:true, trail:false});
             editBot(id);
         }
-
         function editBot(id) {
-            const b = bots.find(x => x.id === id);
-            if(!b) return;
-            document.getElementById('edit-id').value = id;
-            document.getElementById('edit-symbol').value = b.symbol;
-            document.getElementById('edit-status').checked = b.status;
-            document.getElementById('edit-amount').value = b.amount;
-            document.getElementById('edit-drop').value = b.drop;
-            document.getElementById('edit-tp').value = b.tp;
-            document.getElementById('edit-ema').checked = b.ema;
-            document.getElementById('edit-rsi').checked = b.rsi;
-            document.getElementById('edit-trail').checked = b.trail;
+            const b=bots.find(x=>x.id===id);
+            document.getElementById('edit-id').value=id;
+            document.getElementById('edit-symbol').value=b.symbol;
+            document.getElementById('edit-status').checked=b.status;
+            document.getElementById('edit-amount').value=b.amount;
+            document.getElementById('edit-drop').value=b.drop;
+            document.getElementById('edit-tp').value=b.tp;
+            document.getElementById('edit-sl').value=b.sl || 0; // STOP LOSS
+            document.getElementById('edit-ema').checked=b.ema;
+            document.getElementById('edit-rsi').checked=b.rsi;
+            document.getElementById('edit-trail').checked=b.trail;
             nav('edit');
         }
-
         function saveBotInternal() {
-            const id = document.getElementById('edit-id').value;
-            const idx = bots.findIndex(x => x.id === id);
-            if(idx > -1) {
-                bots[idx].symbol = document.getElementById('edit-symbol').value.toUpperCase();
-                bots[idx].status = document.getElementById('edit-status').checked;
-                bots[idx].amount = parseFloat(document.getElementById('edit-amount').value);
-                bots[idx].drop = parseFloat(document.getElementById('edit-drop').value);
-                bots[idx].tp = parseFloat(document.getElementById('edit-tp').value);
-                bots[idx].ema = document.getElementById('edit-ema').checked;
-                bots[idx].rsi = document.getElementById('edit-rsi').checked;
-                bots[idx].trail = document.getElementById('edit-trail').checked;
-                
-                localStorage.setItem('v71_bots', JSON.stringify(bots));
+            const id=document.getElementById('edit-id').value;
+            const idx=bots.findIndex(x=>x.id===id);
+            if(idx>-1) {
+                bots[idx].symbol=document.getElementById('edit-symbol').value.toUpperCase();
+                bots[idx].status=document.getElementById('edit-status').checked;
+                bots[idx].amount=parseFloat(document.getElementById('edit-amount').value);
+                bots[idx].drop=parseFloat(document.getElementById('edit-drop').value);
+                bots[idx].tp=parseFloat(document.getElementById('edit-tp').value);
+                bots[idx].sl=parseFloat(document.getElementById('edit-sl').value); // SAVE SL
+                bots[idx].ema=document.getElementById('edit-ema').checked;
+                bots[idx].rsi=document.getElementById('edit-rsi').checked;
+                bots[idx].trail=document.getElementById('edit-trail').checked;
+                localStorage.setItem('v72_bots', JSON.stringify(bots));
+                log(`Сохранен черновик: ${bots[idx].symbol}`);
                 nav('bots');
             }
         }
-
         function deleteBot() {
-            const id = document.getElementById('edit-id').value;
-            if(confirm("Удалить этого бота?")) {
-                bots = bots.filter(x => x.id !== id);
-                localStorage.setItem('v71_bots', JSON.stringify(bots));
-                nav('bots');
-            }
+            const id=document.getElementById('edit-id').value;
+            if(confirm('Удалить?')) { bots=bots.filter(x=>x.id!==id); localStorage.setItem('v72_bots', JSON.stringify(bots)); nav('bots'); }
         }
-
-        // --- SYNC WITH SERVER ---
         function syncServer() {
-            if(confirm("Отправить настройки всех ботов на сервер? Это перезагрузит приложение.")) {
-                // Send ALL bots data
-                tg.sendData(JSON.stringify({
-                    type: "SYNC_ALL",
-                    bots: bots
-                }));
+            if(confirm('Отправить все настройки боту?')) {
+                tg.sendData(JSON.stringify({type:'SYNC_ALL', bots:bots}));
             }
         }
 
-        // --- INIT ---
-        // Fake log
-        setTimeout(() => {
-            document.getElementById('log-box').innerHTML += '<div class="log-item"><span class="log-time">12:01</span> Анализ рынка...</div>';
-        }, 1000);
+        // CHART
+        new Chart(document.getElementById('equityChart'), {
+            type:'line', data:{labels:[1,2,3,4,5], datasets:[{data:[100, 102, 101, 105, 108], borderColor:'#3b82f6', fill:true, backgroundColor:'rgba(59,130,246,0.1)'}]},
+            options:{plugins:{legend:false}, scales:{x:{display:false}, y:{display:false}}}
+        });
+
+        nav('dash');
     </script>
 </body>
 </html>
