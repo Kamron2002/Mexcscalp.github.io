@@ -3,215 +3,350 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>ProTrade V72</title>
+    <title>Quantum Capital V73</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
     <style>
-        :root { --bg: #0f172a; --card: #1e293b; --text: #f8fafc; --text-sub: #94a3b8; --accent: #3b82f6; --green: #10b981; --red: #ef4444; --border: #334155; }
-        body { background: var(--bg); color: var(--text); font-family: sans-serif; margin: 0; padding-bottom: 80px; }
+        :root {
+            --bg: #000000;
+            --glass: rgba(255, 255, 255, 0.08);
+            --glass-border: rgba(255, 255, 255, 0.1);
+            --primary: #2962ff; /* Institutional Blue */
+            --accent: #00e5ff; /* Cyan glow */
+            --success: #00c853;
+            --danger: #ff1744;
+            --text: #ffffff;
+            --text-sec: #8b9bb4;
+        }
+
+        body {
+            background: radial-gradient(circle at top left, #1a237e 0%, #000000 60%);
+            color: var(--text);
+            font-family: 'Inter', sans-serif;
+            margin: 0; padding-bottom: 100px;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        /* PREMIUM HEADER */
+        .header {
+            padding: 24px 20px;
+            display: flex; justify-content: space-between; align-items: center;
+            background: rgba(0,0,0,0.3);
+            backdrop-filter: blur(20px);
+            position: sticky; top: 0; z-index: 100;
+            border-bottom: 1px solid var(--glass-border);
+        }
+        .logo { font-size: 18px; font-weight: 700; letter-spacing: -0.5px; }
+        .logo span { color: var(--primary); }
+        .sync-btn {
+            background: var(--glass); border: 1px solid var(--glass-border);
+            color: var(--accent); padding: 8px 16px; border-radius: 30px;
+            font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 1px;
+            cursor: pointer; transition: 0.3s;
+        }
+        .sync-btn:active { background: var(--primary); color: white; }
+
+        /* DASHBOARD CARD */
+        .hero-card {
+            margin: 20px; padding: 25px;
+            background: linear-gradient(135deg, rgba(255,255,255,0.1), rgba(255,255,255,0.02));
+            border: 1px solid var(--glass-border);
+            border-radius: 24px;
+            backdrop-filter: blur(10px);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+        }
+        .equity-label { font-size: 12px; color: var(--text-sec); text-transform: uppercase; }
+        .equity-val { font-size: 36px; font-weight: 700; margin: 5px 0 15px 0; letter-spacing: -1px; }
+        .pnl-badge {
+            background: rgba(0, 200, 83, 0.2); color: var(--success);
+            padding: 5px 12px; border-radius: 12px; font-size: 12px; font-weight: 600;
+        }
+
+        /* BOT LIST */
+        .section-title { margin: 0 20px 15px 20px; font-size: 14px; color: var(--text-sec); font-weight: 600; }
+        .bot-card {
+            margin: 0 20px 15px 20px; padding: 20px;
+            background: var(--glass); border: 1px solid var(--glass-border);
+            border-radius: 20px; cursor: pointer; position: relative; overflow: hidden;
+            transition: transform 0.2s;
+        }
+        .bot-card:active { transform: scale(0.98); }
+        .bot-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
+        .coin-icon {
+            width: 40px; height: 40px; border-radius: 12px;
+            background: linear-gradient(135deg, #2962ff, #001242);
+            display: flex; align-items: center; justify-content: center;
+            font-weight: 700; font-size: 12px;
+        }
+        .bot-info h3 { margin: 0; font-size: 16px; font-weight: 600; }
+        .bot-info p { margin: 2px 0 0 0; font-size: 12px; color: var(--text-sec); }
         
-        .header { padding: 15px; background: rgba(15,23,42,0.95); position: sticky; top: 0; z-index: 100; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border); }
-        .sync-btn { background: var(--accent); color: white; border: none; padding: 8px 16px; border-radius: 20px; font-weight: bold; cursor: pointer; animation: pulse 2s infinite; }
-        @keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(59, 130, 246, 0.4); } 100% { box-shadow: 0 0 0 10px transparent; } }
+        /* STATUS INDICATOR */
+        .status-dot { width: 8px; height: 8px; border-radius: 50%; box-shadow: 0 0 10px currentColor; }
+        .on { color: var(--success); }
+        .off { color: var(--danger); }
 
-        .page { display: none; padding: 15px; animation: fadeIn 0.3s; }
-        .page.active { display: block; }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+        /* BUDGET BAR */
+        .budget-row { display: flex; justify-content: space-between; font-size: 11px; color: var(--text-sec); margin-top: 15px; }
+        .progress-bg {
+            height: 6px; background: rgba(255,255,255,0.1); border-radius: 3px; margin-top: 8px; overflow: hidden;
+        }
+        .progress-fill { height: 100%; background: var(--primary); width: 0%; transition: width 0.5s; border-radius: 3px; }
 
-        .card { background: var(--card); border-radius: 16px; padding: 16px; margin-bottom: 12px; border: 1px solid var(--border); }
-        .card-title { font-size: 13px; color: var(--text-sub); margin-bottom: 10px; font-weight: 500; display: flex; justify-content: space-between; }
-
-        /* LOGS */
-        .log-box { font-family: monospace; font-size: 11px; color: var(--text-sub); max-height: 100px; overflow-y: auto; cursor: pointer; border: 1px dashed var(--border); padding: 5px; }
-        .log-item { margin-bottom: 4px; border-bottom: 1px solid #333; }
-        .log-time { color: var(--accent); }
-
-        /* FULL LOG MODAL */
-        #log-modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 200; padding: 20px; box-sizing: border-box; }
-        #full-log-content { background: #000; color: #0f0; font-family: monospace; height: 90%; overflow-y: scroll; padding: 10px; border: 1px solid #0f0; }
-        .close-modal { color: white; font-size: 30px; position: absolute; top: 10px; right: 20px; cursor: pointer; }
+        /* MODAL (APPLE STYLE) */
+        .modal {
+            position: fixed; bottom: -100%; left: 0; width: 100%; height: 85%;
+            background: #121212; border-radius: 24px 24px 0 0;
+            transition: bottom 0.4s cubic-bezier(0.2, 0.8, 0.2, 1);
+            z-index: 200; border-top: 1px solid var(--glass-border);
+            box-shadow: 0 -10px 40px rgba(0,0,0,0.8);
+            display: flex; flex-direction: column;
+        }
+        .modal.open { bottom: 0; }
+        .modal-header { padding: 20px; text-align: center; border-bottom: 1px solid var(--glass-border); position: relative; }
+        .modal-bar { width: 40px; height: 4px; background: #333; border-radius: 2px; margin: 0 auto 15px auto; }
+        .close-btn { position: absolute; right: 20px; top: 25px; color: var(--primary); font-weight: 600; cursor: pointer; font-size: 14px; }
+        .modal-body { padding: 20px; overflow-y: auto; flex: 1; }
 
         /* INPUTS */
-        input[type="text"], input[type="number"] { width: 100%; background: #0f172a; border: 1px solid var(--border); padding: 12px; border-radius: 10px; color: white; font-size: 14px; box-sizing: border-box; margin-bottom: 10px; }
-        label { font-size: 11px; color: var(--text-sub); display: block; margin-bottom: 5px; }
+        .input-group { margin-bottom: 20px; }
+        .input-group label { display: block; font-size: 12px; color: var(--text-sec); margin-bottom: 8px; }
+        input, select {
+            width: 100%; background: #1e1e1e; border: 1px solid #333;
+            padding: 14px; border-radius: 12px; color: white; font-size: 16px;
+            outline: none; box-sizing: border-box; font-family: 'Inter', sans-serif;
+        }
+        input:focus { border-color: var(--primary); }
 
-        /* BOT ITEM */
-        .bot-item { display: flex; justify-content: space-between; align-items: center; padding: 12px; border-bottom: 1px solid var(--border); cursor: pointer; }
-        .bot-status { font-size: 10px; padding: 4px 8px; border-radius: 6px; }
-        .status-on { background: rgba(16,185,129,0.2); color: var(--green); }
-        .status-off { background: rgba(239,68,68,0.2); color: var(--red); }
-
-        .fab { position: fixed; bottom: 90px; right: 20px; width: 50px; height: 50px; background: var(--accent); border-radius: 50%; color: white; display: flex; justify-content: center; align-items: center; font-size: 30px; box-shadow: 0 4px 15px rgba(59,130,246,0.4); }
-        .navbar { position: fixed; bottom: 0; width: 100%; background: var(--bg); border-top: 1px solid var(--border); display: flex; justify-content: space-around; padding: 12px 0; }
-        .nav-item.active { color: var(--accent); }
-        .nav-icon { font-size: 20px; display: block; }
-
-        .switch-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
-        .switch { position: relative; display: inline-block; width: 40px; height: 22px; }
+        .row { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
+        
+        /* SWITCH */
+        .switch-container { display: flex; justify-content: space-between; align-items: center; background: #1e1e1e; padding: 15px; border-radius: 12px; margin-bottom: 10px; }
+        .switch-label { font-size: 14px; font-weight: 500; }
+        .switch { position: relative; display: inline-block; width: 46px; height: 26px; }
         .switch input { opacity: 0; width: 0; height: 0; }
-        .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #334155; transition: .4s; border-radius: 22px; }
-        .slider:before { position: absolute; content: ""; height: 18px; width: 18px; left: 2px; bottom: 2px; background-color: white; transition: .4s; border-radius: 50%; }
-        input:checked + .slider { background-color: var(--accent); }
-        input:checked + .slider:before { transform: translateX(18px); }
+        .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #333; transition: .4s; border-radius: 34px; }
+        .slider:before { position: absolute; content: ""; height: 20px; width: 20px; left: 3px; bottom: 3px; background-color: white; transition: .4s; border-radius: 50%; }
+        input:checked + .slider { background-color: var(--success); }
+        input:checked + .slider:before { transform: translateX(20px); }
+
+        /* BUTTONS */
+        .fab {
+            position: fixed; bottom: 30px; right: 20px;
+            width: 56px; height: 56px; border-radius: 50%;
+            background: var(--primary); color: white;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 28px; box-shadow: 0 10px 30px rgba(41, 98, 255, 0.4);
+            cursor: pointer; transition: transform 0.2s; z-index: 90;
+        }
+        .fab:active { transform: scale(0.9); }
+        
+        .btn-delete { width: 100%; padding: 16px; background: rgba(255, 23, 68, 0.1); color: var(--danger); border: none; border-radius: 12px; font-weight: 600; margin-top: 20px; cursor: pointer; }
+
     </style>
 </head>
 <body>
 
-    <div id="log-modal">
-        <div class="close-modal" onclick="closeLog()">×</div>
-        <div style="color:white; margin-bottom:10px;">📜 ИСТОРИЯ СЕССИИ</div>
-        <div id="full-log-content"></div>
-    </div>
-
     <div class="header">
-        <div style="font-weight:bold;">ProTrade V72</div>
-        <button class="sync-btn" onclick="syncServer()">☁ СИНХРОНИЗАЦИЯ</button>
+        <div class="logo">QUANTUM<span>CAPITAL</span></div>
+        <div class="sync-btn" onclick="sync()">Sync Server</div>
     </div>
 
-    <div id="page-dash" class="page active">
-        <div class="card">
-            <div class="card-title">Рост депозита</div>
-            <canvas id="equityChart" style="height:150px; width:100%;"></canvas>
+    <div class="hero-card">
+        <div class="equity-label">Total Asset Value</div>
+        <div class="equity-val">$ <span id="total-bal">1,240.50</span></div>
+        <span class="pnl-badge">▲ 4.2% Today</span>
+        <canvas id="chart" style="width:100%; height:80px; margin-top:15px;"></canvas>
+    </div>
+
+    <div class="section-title">ACTIVE STRATEGIES</div>
+    <div id="bot-list"></div>
+
+    <div class="fab" onclick="addBot()">+</div>
+
+    <div id="modal" class="modal">
+        <div class="modal-header">
+            <div class="modal-bar"></div>
+            <span style="font-weight:600;">Configuration</span>
+            <div class="close-btn" onclick="closeModal()">Done</div>
         </div>
-        <div class="card">
-            <div class="card-title">Логи (Нажми чтобы открыть) 🔍</div>
-            <div class="log-box" id="log-box" onclick="openLog()">
-                <div class="log-item"><span class="log-time">System:</span> Жду действий...</div>
+        <div class="modal-body">
+            <input type="hidden" id="edit-id">
+            
+            <div class="input-group">
+                <label>Asset Pair</label>
+                <input type="text" id="edit-symbol" value="BTC/USDT" style="font-weight:700; color: var(--accent);">
             </div>
-        </div>
-    </div>
 
-    <div id="page-bots" class="page">
-        <div class="card" id="bot-list-container" style="padding:0;"></div>
-    </div>
-
-    <div id="page-edit" class="page">
-        <input type="hidden" id="edit-id">
-        <div class="card">
-            <label>Пара (BTC/USDT)</label>
-            <input type="text" id="edit-symbol">
-            <div class="switch-row">
-                <label>АКТИВЕН</label>
+            <div class="switch-container">
+                <span class="switch-label">Status (Active)</span>
                 <label class="switch"><input type="checkbox" id="edit-status"><span class="slider"></span></label>
             </div>
-        </div>
-        <div class="card">
-            <div class="card-title">Вход</div>
-            <div class="grid" style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
-                <div><label>Сумма ($)</label><input type="number" id="edit-amount"></div>
-                <div><label>Шаг (%)</label><input type="number" id="edit-drop"></div>
-            </div>
-            <div class="switch-row"><label>EMA 200 (Тренд)</label><label class="switch"><input type="checkbox" id="edit-ema"><span class="slider"></span></label></div>
-            <div class="switch-row"><label>RSI (Фильтр)</label><label class="switch"><input type="checkbox" id="edit-rsi"><span class="slider"></span></label></div>
-        </div>
-        <div class="card">
-            <div class="card-title">Выход и Риски</div>
-            <div class="grid" style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
-                <div><label>Тейк (%)</label><input type="number" id="edit-tp"></div>
-                <div><label style="color:var(--red);">Stop Loss (%)</label><input type="number" id="edit-sl"></div>
-            </div>
-            <div class="switch-row"><label>Trailing Profit</label><label class="switch"><input type="checkbox" id="edit-trail"><span class="slider"></span></label></div>
-        </div>
 
-        <button onclick="saveBotInternal()" style="width:100%; padding:15px; background:var(--text); border:none; border-radius:10px; font-weight:bold;">СОХРАНИТЬ В ЧЕРНОВИК</button>
-        <button onclick="deleteBot()" style="width:100%; padding:15px; background:transparent; border:1px solid var(--red); color:var(--red); border-radius:10px; margin-top:10px;">УДАЛИТЬ</button>
-        <button onclick="nav('bots')" style="width:100%; padding:15px; background:transparent; color:#555; border:none; margin-top:5px;">ОТМЕНА</button>
-    </div>
+            <div class="input-group">
+                <label style="color: var(--primary);">💰 Max Budget Isolation ($)</label>
+                <input type="number" id="edit-budget" placeholder="100">
+                <div style="font-size:10px; color:#555; margin-top:5px;">Bot will stop buying if spent > budget</div>
+            </div>
 
-    <div class="fab" onclick="addNewBot()">+</div>
-    <div class="navbar">
-        <div class="nav-item active" onclick="nav('dash')"><span class="nav-icon">📊</span></div>
-        <div class="nav-item" onclick="nav('bots')"><span class="nav-icon">🤖</span></div>
+            <div class="row">
+                <div class="input-group">
+                    <label>First Order ($)</label>
+                    <input type="number" id="edit-amount">
+                </div>
+                <div class="input-group">
+                    <label>DCA Step (%)</label>
+                    <input type="number" id="edit-drop">
+                </div>
+            </div>
+
+            <div class="row">
+                <div class="input-group">
+                    <label>Take Profit (%)</label>
+                    <input type="number" id="edit-tp">
+                </div>
+                <div class="input-group">
+                    <label style="color:var(--danger);">Stop Loss (%)</label>
+                    <input type="number" id="edit-sl">
+                </div>
+            </div>
+
+            <div class="section-title" style="margin: 20px 0 10px 0;">AI FILTERS</div>
+            <div class="switch-container">
+                <span class="switch-label">Trend Filter (EMA 200)</span>
+                <label class="switch"><input type="checkbox" id="edit-ema"><span class="slider"></span></label>
+            </div>
+            <div class="switch-container">
+                <span class="switch-label">RSI Filter (<30)</span>
+                <label class="switch"><input type="checkbox" id="edit-rsi"><span class="slider"></span></label>
+            </div>
+
+            <button class="btn-delete" onclick="delBot()">Delete Strategy</button>
+            <div style="height: 50px;"></div>
+        </div>
     </div>
 
     <script>
         const tg = window.Telegram.WebApp; tg.expand();
-        let bots = JSON.parse(localStorage.getItem('v72_bots')) || [];
-        let logs = [];
 
-        // LOGGING
-        function log(msg) {
-            const time = new Date().toLocaleTimeString();
-            const line = `<div class="log-item"><span class="log-time">${time}</span> ${msg}</div>`;
-            logs.unshift(line);
-            document.getElementById('log-box').innerHTML = logs.slice(0, 5).join('');
-            document.getElementById('full-log-content').innerHTML = logs.join('');
-        }
-        function openLog() { document.getElementById('log-modal').style.display='block'; }
-        function closeLog() { document.getElementById('log-modal').style.display='none'; }
-
-        // NAV
-        function nav(p) {
-            document.querySelectorAll('.page').forEach(e=>e.classList.remove('active'));
-            document.getElementById('page-'+p).classList.add('active');
-            document.querySelector('.fab').style.display = (p==='bots')?'flex':'none';
-            if(p==='bots') renderBots();
-        }
-
-        // BOTS
-        function renderBots() {
-            const c = document.getElementById('bot-list-container'); c.innerHTML='';
-            bots.forEach(b => {
-                const d = document.createElement('div'); d.className='bot-item';
-                d.innerHTML = `<div><b>${b.symbol}</b><br><span style="font-size:10px; color:#888">$${b.amount} | SL: ${b.sl}%</span></div>
-                               <div class="bot-status ${b.status?'status-on':'status-off'}">${b.status?'ON':'OFF'}</div>`;
-                d.onclick=()=>editBot(b.id); c.appendChild(d);
-            });
-        }
-        function addNewBot() {
-            const id='BOT_'+Date.now();
-            bots.push({id:id, symbol:'BTC/USDT', status:false, amount:10, drop:0.5, tp:0.5, sl:5.0, ema:true, rsi:true, trail:false});
-            editBot(id);
-        }
-        function editBot(id) {
-            const b=bots.find(x=>x.id===id);
-            document.getElementById('edit-id').value=id;
-            document.getElementById('edit-symbol').value=b.symbol;
-            document.getElementById('edit-status').checked=b.status;
-            document.getElementById('edit-amount').value=b.amount;
-            document.getElementById('edit-drop').value=b.drop;
-            document.getElementById('edit-tp').value=b.tp;
-            document.getElementById('edit-sl').value=b.sl || 0; // STOP LOSS
-            document.getElementById('edit-ema').checked=b.ema;
-            document.getElementById('edit-rsi').checked=b.rsi;
-            document.getElementById('edit-trail').checked=b.trail;
-            nav('edit');
-        }
-        function saveBotInternal() {
-            const id=document.getElementById('edit-id').value;
-            const idx=bots.findIndex(x=>x.id===id);
-            if(idx>-1) {
-                bots[idx].symbol=document.getElementById('edit-symbol').value.toUpperCase();
-                bots[idx].status=document.getElementById('edit-status').checked;
-                bots[idx].amount=parseFloat(document.getElementById('edit-amount').value);
-                bots[idx].drop=parseFloat(document.getElementById('edit-drop').value);
-                bots[idx].tp=parseFloat(document.getElementById('edit-tp').value);
-                bots[idx].sl=parseFloat(document.getElementById('edit-sl').value); // SAVE SL
-                bots[idx].ema=document.getElementById('edit-ema').checked;
-                bots[idx].rsi=document.getElementById('edit-rsi').checked;
-                bots[idx].trail=document.getElementById('edit-trail').checked;
-                localStorage.setItem('v72_bots', JSON.stringify(bots));
-                log(`Сохранен черновик: ${bots[idx].symbol}`);
-                nav('bots');
-            }
-        }
-        function deleteBot() {
-            const id=document.getElementById('edit-id').value;
-            if(confirm('Удалить?')) { bots=bots.filter(x=>x.id!==id); localStorage.setItem('v72_bots', JSON.stringify(bots)); nav('bots'); }
-        }
-        function syncServer() {
-            if(confirm('Отправить все настройки боту?')) {
-                tg.sendData(JSON.stringify({type:'SYNC_ALL', bots:bots}));
-            }
-        }
+        // MOCK DATA FOR DEMO
+        let bots = JSON.parse(localStorage.getItem('v73_bots')) || [
+            {id: 'B1', symbol: 'BTC/USDT', status: true, budget: 500, spent: 120, amount: 20, drop: 0.5, tp: 0.8, sl: 0, ema: true, rsi: true}
+        ];
 
         // CHART
-        new Chart(document.getElementById('equityChart'), {
-            type:'line', data:{labels:[1,2,3,4,5], datasets:[{data:[100, 102, 101, 105, 108], borderColor:'#3b82f6', fill:true, backgroundColor:'rgba(59,130,246,0.1)'}]},
-            options:{plugins:{legend:false}, scales:{x:{display:false}, y:{display:false}}}
+        const ctx = document.getElementById('chart').getContext('2d');
+        const gradient = ctx.createLinearGradient(0, 0, 0, 80);
+        gradient.addColorStop(0, 'rgba(41, 98, 255, 0.4)');
+        gradient.addColorStop(1, 'rgba(41, 98, 255, 0)');
+
+        new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: [1,2,3,4,5,6],
+                datasets: [{
+                    data: [1200, 1210, 1205, 1225, 1230, 1240],
+                    borderColor: '#2962ff', borderWidth: 2,
+                    backgroundColor: gradient, fill: true, pointRadius: 0
+                }]
+            },
+            options: { plugins: {legend:false}, scales: {x:{display:false}, y:{display:false}} }
         });
 
-        nav('dash');
+        // RENDER
+        function render() {
+            const list = document.getElementById('bot-list');
+            list.innerHTML = '';
+            let total = 0;
+            
+            bots.forEach(b => {
+                const percentUsed = Math.min((b.spent || 0) / b.budget * 100, 100);
+                const el = document.createElement('div');
+                el.className = 'bot-card';
+                el.onclick = () => openModal(b.id);
+                el.innerHTML = `
+                    <div class="bot-header">
+                        <div style="display:flex; gap:12px; align-items:center;">
+                            <div class="coin-icon">${b.symbol.substring(0,3)}</div>
+                            <div class="bot-info">
+                                <h3>${b.symbol}</h3>
+                                <p>${b.status ? 'Active' : 'Paused'}</p>
+                            </div>
+                        </div>
+                        <div class="status-dot ${b.status ? 'on' : 'off'}"></div>
+                    </div>
+                    <div class="budget-row">
+                        <span>Risk Budget: $${b.budget}</span>
+                        <span>Used: $${b.spent || 0}</span>
+                    </div>
+                    <div class="progress-bg">
+                        <div class="progress-fill" style="width: ${percentUsed}%; background: ${percentUsed > 90 ? 'var(--danger)' : 'var(--primary)'}"></div>
+                    </div>
+                `;
+                list.appendChild(el);
+            });
+        }
+
+        // ACTIONS
+        function addBot() {
+            const id = 'B_' + Date.now();
+            bots.push({id, symbol:'ETH/USDT', status:false, budget:100, spent:0, amount:10, drop:0.5, tp:0.5, sl:0, ema:true, rsi:true});
+            save(); render(); openModal(id);
+        }
+
+        function openModal(id) {
+            const b = bots.find(x => x.id === id);
+            document.getElementById('edit-id').value = id;
+            document.getElementById('edit-symbol').value = b.symbol;
+            document.getElementById('edit-status').checked = b.status;
+            document.getElementById('edit-budget').value = b.budget;
+            document.getElementById('edit-amount').value = b.amount;
+            document.getElementById('edit-drop').value = b.drop;
+            document.getElementById('edit-tp').value = b.tp;
+            document.getElementById('edit-sl').value = b.sl;
+            document.getElementById('edit-ema').checked = b.ema;
+            document.getElementById('edit-rsi').checked = b.rsi;
+            document.getElementById('modal').classList.add('open');
+        }
+
+        function closeModal() {
+            // Save on close
+            const id = document.getElementById('edit-id').value;
+            const idx = bots.findIndex(x => x.id === id);
+            if(idx > -1) {
+                bots[idx].symbol = document.getElementById('edit-symbol').value.toUpperCase();
+                bots[idx].status = document.getElementById('edit-status').checked;
+                bots[idx].budget = parseFloat(document.getElementById('edit-budget').value);
+                bots[idx].amount = parseFloat(document.getElementById('edit-amount').value);
+                bots[idx].drop = parseFloat(document.getElementById('edit-drop').value);
+                bots[idx].tp = parseFloat(document.getElementById('edit-tp').value);
+                bots[idx].sl = parseFloat(document.getElementById('edit-sl').value);
+                bots[idx].ema = document.getElementById('edit-ema').checked;
+                bots[idx].rsi = document.getElementById('edit-rsi').checked;
+                save(); render();
+            }
+            document.getElementById('modal').classList.remove('open');
+        }
+
+        function delBot() {
+            if(confirm('Delete Strategy?')) {
+                const id = document.getElementById('edit-id').value;
+                bots = bots.filter(x => x.id !== id);
+                save(); render(); 
+                document.getElementById('modal').classList.remove('open');
+            }
+        }
+
+        function save() { localStorage.setItem('v73_bots', JSON.stringify(bots)); }
+        
+        function sync() {
+            if(confirm('Upload Portfolio to Server?')) {
+                tg.sendData(JSON.stringify({type: 'SYNC_ALL', bots: bots}));
+            }
+        }
+
+        render();
     </script>
 </body>
 </html>
