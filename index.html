@@ -3,123 +3,266 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>ProTrade V69 AI</title>
+    <title>CYBER TRADER V70</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <script type="text/javascript" src="https://s3.tradingview.com/tv.js"></script>
     <style>
-        :root { --bg: #09090b; --card: #18181b; --text: #fafafa; --sub: #a1a1aa; --primary: #8b5cf6; --green: #22c55e; --red: #ef4444; --border: #27272a; }
-        body { background: var(--bg); color: var(--text); font-family: -apple-system, sans-serif; margin: 0; padding: 0; padding-bottom: 90px; }
-        .header { padding: 15px 20px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; background: linear-gradient(180deg, rgba(139,92,246,0.1) 0%, rgba(9,9,11,0) 100%); }
-        .title { font-size: 18px; font-weight: 800; }
-        .badge { font-size: 10px; background: rgba(139,92,246,0.2); color: var(--primary); padding: 4px 8px; border-radius: 6px; font-weight: bold; border: 1px solid rgba(139,92,246,0.4); }
-        .page { display: none; padding: 16px; animation: fade 0.2s; }
-        .page.active { display: block; }
-        @keyframes fade { from{opacity:0} to{opacity:1} }
-        .card { background: var(--card); border: 1px solid var(--border); border-radius: 14px; padding: 16px; margin-bottom: 12px; }
-        .card-header { font-size: 12px; color: var(--sub); text-transform: uppercase; margin-bottom: 10px; font-weight: 700; display: flex; justify-content: space-between; }
+        /* CYBERPUNK THEME */
+        @import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap');
+        
+        :root {
+            --bg: #050505;
+            --card-bg: rgba(20, 20, 25, 0.8);
+            --neon-green: #00ff41;
+            --neon-pink: #f700ff;
+            --neon-blue: #00f3ff;
+            --text: #e0e0e0;
+            --border: 1px solid rgba(0, 243, 255, 0.2);
+            --glow: 0 0 10px rgba(0, 243, 255, 0.1);
+        }
+
+        body {
+            background-color: var(--bg);
+            background-image: linear-gradient(0deg, transparent 24%, rgba(0, 255, 65, .03) 25%, rgba(0, 255, 65, .03) 26%, transparent 27%, transparent 74%, rgba(0, 255, 65, .03) 75%, rgba(0, 255, 65, .03) 76%, transparent 77%, transparent), linear-gradient(90deg, transparent 24%, rgba(0, 255, 65, .03) 25%, rgba(0, 255, 65, .03) 26%, transparent 27%, transparent 74%, rgba(0, 255, 65, .03) 75%, rgba(0, 255, 65, .03) 76%, transparent 77%, transparent);
+            background-size: 50px 50px;
+            color: var(--text);
+            font-family: 'Share Tech Mono', monospace;
+            margin: 0; padding-bottom: 90px;
+        }
+
+        /* HEADER */
+        .header {
+            padding: 20px;
+            display: flex; justify-content: space-between; align-items: center;
+            border-bottom: 1px solid var(--neon-blue);
+            box-shadow: 0 0 15px rgba(0, 243, 255, 0.2);
+            background: rgba(0,0,0,0.8);
+            backdrop-filter: blur(5px);
+        }
+        .title { font-size: 20px; color: var(--neon-blue); text-shadow: 0 0 5px var(--neon-blue); }
+        .status { font-size: 10px; color: var(--neon-green); }
+
+        /* TERMINAL (LIVE LOG) */
+        .terminal {
+            background: #000;
+            border: 1px solid var(--neon-green);
+            padding: 10px;
+            margin: 15px;
+            height: 120px;
+            overflow-y: auto;
+            font-size: 10px;
+            color: var(--neon-green);
+            box-shadow: inset 0 0 20px rgba(0, 255, 65, 0.1);
+            border-radius: 4px;
+        }
+        .log-line { margin-bottom: 4px; }
+        .log-time { opacity: 0.6; margin-right: 5px; }
+
+        /* CARDS */
+        .card {
+            background: var(--card-bg);
+            border: var(--border);
+            margin: 15px;
+            padding: 15px;
+            border-radius: 8px;
+            box-shadow: var(--glow);
+            position: relative;
+            overflow: hidden;
+        }
+        .card::before {
+            content: ''; position: absolute; top: 0; left: 0; width: 2px; height: 100%;
+            background: var(--neon-pink);
+            box-shadow: 0 0 10px var(--neon-pink);
+        }
+        .card-header {
+            display: flex; justify-content: space-between;
+            font-size: 12px; color: var(--neon-blue); margin-bottom: 10px;
+            text-transform: uppercase; letter-spacing: 1px;
+        }
+
+        /* INPUTS */
         .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-        label { display: block; font-size: 10px; color: var(--sub); margin-bottom: 4px; }
-        input { width: 100%; background: #000; border: 1px solid var(--border); color: white; padding: 12px; border-radius: 8px; font-size: 14px; outline: none; box-sizing: border-box; }
-        input:focus { border-color: var(--primary); }
-        .toggle-row { display: flex; justify-content: space-between; align-items: center; background: rgba(0,0,0,0.3); padding: 10px; border-radius: 8px; margin-top: 5px; }
-        input[type="checkbox"] { width: 20px; height: 20px; margin: 0; accent-color: var(--primary); }
-        .bot-item { display: flex; align-items: center; background: var(--card); padding: 12px; border-radius: 10px; margin-bottom: 8px; border: 1px solid var(--border); cursor: pointer; }
-        .bot-item.selected { border-color: var(--primary); background: rgba(139,92,246,0.05); }
-        .dot { width: 8px; height: 8px; border-radius: 50%; margin-right: 10px; }
-        .dot.on { background: var(--green); box-shadow: 0 0 5px var(--green); }
-        .dot.off { background: var(--red); opacity: 0.5; }
-        #chart-modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 1000; padding-top: 50px; }
-        #chart-content { height: 70%; width: 95%; margin: 0 auto; border: 1px solid var(--border); border-radius: 12px; overflow: hidden; }
-        .close-chart { position: absolute; top: 15px; right: 20px; font-size: 30px; color: white; cursor: pointer; }
-        .btn { width: 100%; padding: 14px; border-radius: 10px; border: none; font-weight: 700; cursor: pointer; color: white; margin-top: 8px; font-size: 14px; }
-        .btn-save { background: var(--primary); }
-        .btn-start { background: var(--green); color: #000; }
-        .btn-stop { background: rgba(239,68,68,0.15); color: var(--red); border: 1px solid var(--red); }
-        .btn-chart { background: #27272a; border: 1px solid var(--sub); color: var(--text); }
-        .btn-panic { background: var(--red); color: white; margin-top: 20px; box-shadow: 0 4px 15px rgba(239,68,68,0.3); }
-        .fab { position: fixed; bottom: 85px; right: 20px; width: 44px; height: 44px; background: var(--primary); border-radius: 50%; color: white; display: flex; align-items: center; justify-content: center; font-size: 24px; box-shadow: 0 4px 15px rgba(0,0,0,0.5); z-index: 100; }
-        .navbar { position: fixed; bottom: 0; width: 100%; background: rgba(24,24,27,0.95); border-top: 1px solid var(--border); display: flex; justify-content: space-around; padding: 10px 0; z-index: 99; backdrop-filter: blur(10px); }
-        .nav-item { font-size: 9px; color: var(--sub); display: flex; flex-direction: column; align-items: center; opacity: 0.6; transition: 0.2s; }
-        .nav-item.active { color: var(--primary); opacity: 1; transform: scale(1.1); }
-        .nav-icon { font-size: 18px; margin-bottom: 2px; }
+        label { display: block; font-size: 10px; color: var(--neon-blue); margin-bottom: 5px; }
+        input[type="number"], input[type="text"] {
+            width: 100%; box-sizing: border-box;
+            background: rgba(0,0,0,0.5);
+            border: 1px solid #333;
+            color: var(--neon-green);
+            padding: 10px;
+            font-family: 'Share Tech Mono', monospace;
+            outline: none;
+            transition: 0.3s;
+        }
+        input:focus { border-color: var(--neon-green); box-shadow: 0 0 10px rgba(0, 255, 65, 0.2); }
+
+        /* BUTTONS */
+        .btn {
+            width: 100%; padding: 15px; margin-top: 10px;
+            background: transparent;
+            border: 1px solid var(--neon-blue);
+            color: var(--neon-blue);
+            font-family: 'Share Tech Mono', monospace;
+            font-weight: bold; cursor: pointer;
+            text-transform: uppercase;
+            transition: 0.2s;
+        }
+        .btn:active { transform: scale(0.98); }
+        .btn-start { border-color: var(--neon-green); color: var(--neon-green); box-shadow: 0 0 10px rgba(0, 255, 65, 0.1); }
+        .btn-stop { border-color: var(--neon-pink); color: var(--neon-pink); }
+        .btn-save { background: rgba(0, 243, 255, 0.1); }
+
+        /* ACTIVE TRADES (Holographic Cards) */
+        .trade-card {
+            display: flex; justify-content: space-between; align-items: center;
+            border-bottom: 1px solid #333; padding: 10px 0;
+        }
+        .pnl-pos { color: var(--neon-green); }
+        .pnl-neg { color: var(--neon-pink); }
+
+        /* NAV */
+        .navbar {
+            position: fixed; bottom: 0; width: 100%;
+            background: #000; border-top: 1px solid var(--neon-blue);
+            display: flex; justify-content: space-around; padding: 15px 0;
+            z-index: 99;
+        }
+        .nav-item { color: #555; font-size: 20px; transition: 0.3s; }
+        .nav-item.active { color: var(--neon-blue); text-shadow: 0 0 10px var(--neon-blue); transform: scale(1.2); }
+
+        .page { display: none; }
+        .page.active { display: block; animation: glitch 0.3s; }
+        @keyframes glitch { 0% { opacity: 0; transform: translateX(-10px); } 100% { opacity: 1; transform: translateX(0); } }
     </style>
 </head>
 <body>
-    <div id="chart-modal"><div class="close-chart" onclick="closeChart()">×</div><div id="chart-content"></div></div>
+
     <div class="header">
-        <div><div class="title">ProTrade V69</div><div style="font-size: 11px; color: var(--sub);" id="active_label">AI Core</div></div>
-        <div class="badge">PROFESSIONAL</div>
+        <div>
+            <div class="title">CYBER TRADER v70</div>
+            <div class="status">SYSTEM ONLINE</div>
+        </div>
+        <div style="font-size: 20px;">🧬</div>
     </div>
+
     <div id="page-home" class="page active">
-        <div class="card">
-            <div class="card-header"><span>Session PnL</span> <span>Live</span></div>
-            <div style="font-size: 32px; font-weight: 700; margin: 10px 0;">$ <span id="total_pnl">0.00</span></div>
-            <div style="font-size: 11px; color: var(--sub);">Bot uses SQLite DB + EMA/ATR Logic</div>
+        <div class="terminal" id="terminal">
+            <div class="log-line"><span class="log-time">[SYSTEM]</span> Connecting to Neural Network...</div>
+            <div class="log-line"><span class="log-time">[SYSTEM]</span> Uzbekistan Time Sync: OK</div>
+            <div class="log-line"><span class="log-time">[DB]</span> SQLite Core Loaded.</div>
         </div>
-        <button class="btn btn-chart" onclick="openChart()">📈 VIEW CHART</button>
+
+        <div class="card">
+            <div class="card-header"><span>Active Positions</span> <span>LIVE</span></div>
+            <div id="active-trades-list">
+                <div style="text-align: center; color: #555; padding: 20px;">NO SIGNAL</div>
+            </div>
+        </div>
     </div>
-    <div id="page-bots" class="page"><div id="bot-list"></div></div>
+
     <div id="page-settings" class="page">
-        <input type="hidden" id="bot_id">
+        <input type="hidden" id="bot_id" value="MAIN">
+        
         <div class="card">
-            <div class="card-header"><span>Market Setup</span></div>
-            <div style="margin-bottom: 10px;"><label>Pair (e.g. BTC/USDT)</label><input type="text" id="symbol" style="color: var(--primary); font-weight: bold; font-size: 16px;"></div>
+            <div class="card-header"><span>Target Lock</span></div>
+            <label>ASSET PAIR</label>
+            <input type="text" id="symbol" value="BTC/USDT">
+            
+            <div class="grid" style="margin-top:10px;">
+                <div><label>AMOUNT ($)</label><input type="number" id="amount" value="10"></div>
+                <div><label>DCA (x)</label><input type="number" id="dca_mult" value="1.5"></div>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-header"><span>Neural Filters</span></div>
+            <div style="display:flex; justify-content:space-between; margin-bottom:5px;">
+                <label>EMA 200 (Trend)</label><input type="checkbox" id="use_ema" checked>
+            </div>
+            <div style="display:flex; justify-content:space-between;">
+                <label>ATR (Volatility)</label><input type="checkbox" id="use_atr" checked>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-header"><span>Execution</span></div>
             <div class="grid">
-                <div><label>Order $</label><input type="number" id="amount"></div>
-                <div><label>DCA Mult (x)</label><input type="number" id="dca_mult" placeholder="1.5"></div>
-                <div><label>Price Drop %</label><input type="number" id="drop"></div>
-                <div><label>Take Profit %</label><input type="number" id="tp"></div>
+                <div><label>DROP %</label><input type="number" id="drop" value="0.35"></div>
+                <div><label>PROFIT %</label><input type="number" id="tp" value="0.5"></div>
+            </div>
+            <div style="margin-top:10px;">
+                <label>RSI LIMIT (5m)</label>
+                <input type="number" id="rsi_limit" value="30">
             </div>
         </div>
-        <div class="card" style="border-color: var(--primary);">
-            <div class="card-header"><span style="color: var(--primary);">🧠 AI Filters (Safety)</span></div>
-            <div class="toggle-row"><label>📉 EMA 200 Trend Filter</label><input type="checkbox" id="use_ema"></div>
-            <div style="font-size:9px; color:#888; margin-bottom:8px;">Don't buy if Price < EMA (Bear Market)</div>
-            <div class="toggle-row"><label>⚡ ATR Dynamic Step</label><input type="checkbox" id="use_atr"></div>
-            <div style="font-size:9px; color:#888;">Increase Drop % if market is volatile</div>
+
+        <div style="padding: 15px;">
+            <button class="btn btn-save" onclick="send('save')">SAVE CONFIG</button>
+            <button class="btn btn-start" onclick="send('start')">INITIALIZE</button>
+            <button class="btn btn-stop" onclick="send('stop')">TERMINATE</button>
         </div>
-        <div class="card">
-            <div class="card-header"><span>RSI Filter (5m)</span></div>
-            <div class="toggle-row"><label>Enable RSI</label><input type="checkbox" id="rsi_on"></div>
-            <div style="margin-top: 10px;"><label>Max RSI Limit (<)</label><input type="number" id="rsi_limit"></div>
-        </div>
-        <div class="card">
-            <div class="card-header"><span>Risk & Isolation</span></div>
-            <div style="margin-bottom: 10px;"><label style="color: var(--green);">💰 Max Budget ($)</label><input type="number" id="max_budget" style="border-color: var(--green);"></div>
-            <div class="toggle-row"><label>🌊 Trailing Profit</label><input type="checkbox" id="trail_on"></div>
-            <div class="grid" style="margin-top: 10px;">
-                <div><label>Trail Dev %</label><input type="number" id="trail_dev"></div>
-                <div><label>Stop Loss %</label><input type="number" id="sl"></div>
-            </div>
-        </div>
-        <div style="display: flex; gap: 10px;">
-            <button class="btn btn-save" onclick="send('save')">💾 SAVE</button>
-            <button class="btn btn-start" onclick="send('start')">▶ START</button>
-        </div>
-        <button class="btn btn-stop" onclick="send('stop')">⏹ STOP BOT</button>
-        <button class="btn btn-panic" onclick="forceExit()">📉 FORCE EXIT</button>
-        <button class="btn btn-stop" onclick="deleteBot()" style="margin-top: 20px; background: transparent; border: none; color: #555;">Delete Strategy</button>
     </div>
-    <div class="fab" onclick="addBot()">+</div>
+
     <div class="navbar">
-        <div class="nav-item active" onclick="nav('home')"><div class="nav-icon">📊</div>Stats</div>
-        <div class="nav-item" onclick="nav('bots')"><div class="nav-icon">🤖</div>Bots</div>
-        <div class="nav-item" onclick="nav('settings')"><div class="nav-icon">⚙️</div>Config</div>
+        <div class="nav-item active" onclick="nav('home')">▤</div>
+        <div class="nav-item" onclick="nav('settings')">⚙</div>
     </div>
+
     <script>
         const tg = window.Telegram.WebApp; tg.expand();
-        let bots = JSON.parse(localStorage.getItem('my_bots_v69')) || [{id: 'MAIN', name: 'Main Bot', status: false, config: {symbol: 'ETH/USDT', amount: 10, dca_mult: 1.5, drop: 0.35, tp: 0.5, rsi_enable: true, rsi_limit: 30, use_ema: true, use_atr: true, max_budget: 50, trail_on: false, trail_dev: 0.1, sl: 0}}];
-        function saveLocal() { localStorage.setItem('my_bots_v69', JSON.stringify(bots)); }
-        function nav(page) { document.querySelectorAll('.page').forEach(e => e.classList.remove('active')); document.querySelectorAll('.nav-item').forEach(e => e.classList.remove('active')); document.getElementById('page-'+page).classList.add('active'); const idx = ['home', 'bots', 'settings'].indexOf(page); document.querySelectorAll('.nav-item')[idx].classList.add('active'); document.querySelector('.fab').style.display = (page === 'bots') ? 'flex' : 'none'; }
-        function openChart() { const activeId = document.getElementById('bot_id').value || 'MAIN'; const bot = bots.find(b => b.id === activeId) || bots[0]; const pair = bot.config.symbol.replace('/', '').toUpperCase(); document.getElementById('chart-modal').style.display = 'block'; new TradingView.widget({ "width": "100%", "height": "100%", "symbol": "MEXC:" + pair, "interval": "5", "timezone": "Etc/UTC", "theme": "dark", "style": "1", "locale": "en", "toolbar_bg": "#f1f3f6", "enable_publishing": false, "hide_top_toolbar": true, "container_id": "chart-content" }); }
-        function closeChart() { document.getElementById('chart-modal').style.display = 'none'; }
-        function renderBots() { const list = document.getElementById('bot-list'); list.innerHTML = ''; bots.forEach(b => { const el = document.createElement('div'); el.className = `bot-item ${document.getElementById('bot_id').value === b.id ? 'selected' : ''}`; el.innerHTML = `<div class="dot ${b.status?'on':'off'}"></div><div><b>${b.name}</b><div style="font-size:10px; color:#888">${b.config.symbol}</div></div>`; el.onclick = () => openSettings(b.id); list.appendChild(el); }); }
-        function addBot() { const id = 'BOT_' + Math.floor(Math.random()*9999); bots.push({id: id, name: 'Strategy '+bots.length, status: false, config: {symbol: 'BTC/USDT', amount: 10, dca_mult: 1.5, drop: 0.35, tp: 0.5, rsi_enable: true, rsi_limit: 30, use_ema: true, use_atr: true, max_budget: 50, trail_on: false, trail_dev: 0.1, sl: 0}}); saveLocal(); renderBots(); openSettings(id); }
-        function openSettings(id) { const bot = bots.find(b => b.id === id); document.getElementById('bot_id').value = bot.id; document.getElementById('active_label').innerText = bot.name; const c = bot.config; document.getElementById('symbol').value = c.symbol; document.getElementById('amount').value = c.amount; document.getElementById('dca_mult').value = c.dca_mult; document.getElementById('drop').value = c.drop; document.getElementById('tp').value = c.tp; document.getElementById('rsi_limit').value = c.rsi_limit || 30; document.getElementById('rsi_on').checked = c.rsi_enable !== false; document.getElementById('use_ema').checked = c.use_ema !== false; document.getElementById('use_atr').checked = c.use_atr !== false; document.getElementById('max_budget').value = c.max_budget || 50; document.getElementById('trail_on').checked = c.trail_on || false; document.getElementById('trail_dev').value = c.trail_dev || 0.1; document.getElementById('sl').value = c.sl || 0; nav('settings'); }
-        function deleteBot() { const id = document.getElementById('bot_id').value; if(id === 'MAIN') return alert("Cannot delete Main"); if(confirm("Delete?")) { bots = bots.filter(b => b.id !== id); saveLocal(); send('stop'); renderBots(); nav('bots'); } }
-        function forceExit() { if(confirm("⚠️ SELL ALL INVENTORY NOW?")) send('force_exit'); }
-        function send(action) { if(tg.HapticFeedback) tg.HapticFeedback.notificationOccurred('success'); const id = document.getElementById('bot_id').value; const bot = bots.find(b => b.id === id); bot.config = { symbol: document.getElementById('symbol').value.toUpperCase(), amount: parseFloat(document.getElementById('amount').value), dca_mult: parseFloat(document.getElementById('dca_mult').value), drop: parseFloat(document.getElementById('drop').value), tp: parseFloat(document.getElementById('tp').value), rsi_enable: document.getElementById('rsi_on').checked, rsi_limit: parseFloat(document.getElementById('rsi_limit').value), use_ema: document.getElementById('use_ema').checked, use_atr: document.getElementById('use_atr').checked, max_budget: parseFloat(document.getElementById('max_budget').value), trail_on: document.getElementById('trail_on').checked, trail_dev: parseFloat(document.getElementById('trail_dev').value), sl: parseFloat(document.getElementById('sl').value) }; if(action === 'start') bot.status = true; if(action === 'stop' || action === 'force_exit') bot.status = false; saveLocal(); renderBots(); tg.sendData(JSON.stringify({ action: action, bot_id: id, ...bot.config })); }
-        renderBots(); nav('home');
+
+        // FAKE TERMINAL LOGIC (VISUAL ONLY)
+        function log(msg) {
+            const t = document.getElementById('terminal');
+            const time = new Date().toLocaleTimeString();
+            t.innerHTML += `<div class="log-line"><span class="log-time">[${time}]</span> ${msg}</div>`;
+            t.scrollTop = t.scrollHeight;
+        }
+
+        // LOAD SAVED DATA
+        let config = JSON.parse(localStorage.getItem('v70_config')) || {};
+        if(config.symbol) {
+            document.getElementById('symbol').value = config.symbol;
+            document.getElementById('amount').value = config.amount;
+            document.getElementById('tp').value = config.tp;
+        }
+
+        function nav(p) {
+            document.querySelectorAll('.page').forEach(e=>e.classList.remove('active'));
+            document.getElementById('page-'+p).classList.add('active');
+            document.querySelectorAll('.nav-item').forEach(e=>e.classList.remove('active'));
+            event.currentTarget.classList.add('active');
+        }
+
+        function send(action) {
+            const data = {
+                action: action,
+                bot_id: 'MAIN',
+                symbol: document.getElementById('symbol').value.toUpperCase(),
+                amount: parseFloat(document.getElementById('amount').value),
+                dca_mult: parseFloat(document.getElementById('dca_mult').value),
+                tp: parseFloat(document.getElementById('tp').value),
+                drop: parseFloat(document.getElementById('drop').value),
+                rsi_limit: parseFloat(document.getElementById('rsi_limit').value),
+                use_ema: document.getElementById('use_ema').checked,
+                use_atr: document.getElementById('use_atr').checked
+            };
+            
+            localStorage.setItem('v70_config', JSON.stringify(data));
+            
+            if(action === 'start') log(`INITIATING SEQUENCE FOR ${data.symbol}...`);
+            if(action === 'stop') log(`TERMINATING PROCESS...`);
+            
+            tg.sendData(JSON.stringify(data));
+        }
+
+        // SIMULATE LOGS
+        setInterval(() => {
+            if(Math.random() > 0.7) {
+                const msgs = ["Scanning Market...", "EMA Trend: Bullish", "RSI: 45 (Neutral)", "Waiting for entry..."];
+                log(msgs[Math.floor(Math.random()*msgs.length)]);
+            }
+        }, 5000);
+
     </script>
 </body>
 </html>
