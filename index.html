@@ -1,289 +1,270 @@
-<!DOCTYPE html>
-<html lang="ru">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Quantum V76</title>
-    <script src="https://telegram.org/js/telegram-web-app.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
-    <style>
-        :root {
-            --bg: #050505; --glass: rgba(30, 30, 35, 0.8);
-            --primary: #2962ff; --accent: #00e5ff;
-            --success: #00c853; --danger: #ff1744;
-            --text: #ffffff; --text-sec: #8b9bb4;
-        }
-        body { background: radial-gradient(circle at top, #0d1b2a 0%, #000000 100%); color: var(--text); font-family: 'Inter', sans-serif; margin: 0; padding-bottom: 90px; }
+import logging
+import asyncio
+import time
+import json
+import os
+import sqlite3
+import datetime
+import math
+try: import pytz; UZ_TZ = pytz.timezone('Asia/Tashkent')
+except: UZ_TZ = datetime.timezone.utc
+
+from telegram import Update, KeyboardButton, ReplyKeyboardMarkup, WebAppInfo
+from telegram.ext import ApplicationBuilder, ContextTypes, CommandHandler, MessageHandler, filters, Defaults
+import ccxt.async_support as ccxt
+
+# ==========================================
+# 🔐 КЛЮЧИ (ПРОВЕРЬ ИХ!)
+# ==========================================
+TELEGRAM_TOKEN = "8399724226:AAH4FwfB1rHoLSQB9MhKBsR3tmYRRsE6onY"
+ALLOWED_USER_ID = 509399521
+MEXC_API_KEY = "mx0vglsGrqmuiZvjgS"
+MEXC_SECRET_KEY = "918a63b5241f452d8e1aaeb43c8a57ea"
+# ВСТАВЬ СЮДА ССЫЛКУ НА СВОЙ GITHUB (ОБЯЗАТЕЛЬНО!)
+WEB_APP_URL = "https://kamron2002.github.io/Mexcscalp.github.io/" 
+
+DB_FILE = "trade_core_v77.db"
+CHECK_INTERVAL = 12
+
+logging.basicConfig(format='%(asctime)s - %(message)s', level=logging.INFO)
+logging.getLogger("apscheduler").setLevel(logging.WARNING)
+exchange = None
+BOTS = {}
+
+# ==========================================
+# 🧠 EXPERT BRAIN (МАТЕМАТИКА)
+# ==========================================
+def calculate_bollinger_bands(prices, period=20, std_dev=2):
+    if len(prices) < period: return None
+    # Simple Moving Average (SMA)
+    sma = sum(prices[-period:]) / period
+    # Standard Deviation
+    variance = sum([((x - sma) ** 2) for x in prices[-period:]]) / period
+    std = math.sqrt(variance)
+    return {
+        "upper": sma + (std * std_dev),
+        "lower": sma - (std * std_dev),
+        "middle": sma,
+        "width": (sma + (std * std_dev) - (sma - (std * std_dev))) / sma # Ширина канала
+    }
+
+def analyze_regime(prices):
+    """Определяет состояние рынка"""
+    bb = calculate_bollinger_bands(prices)
+    if not bb: return "UNKNOWN"
+    
+    # Если ширина канала больше 5% - это ШТОРМ
+    if bb["width"] > 0.05: return "STORM"
+    # Если ширина меньше 1% - это ШТИЛЬ (Флэт)
+    if bb["width"] < 0.01: return "CALM"
+    
+    return "NORMAL"
+
+# ==========================================
+# 💾 DATABASE
+# ==========================================
+def init_db():
+    conn = sqlite3.connect(DB_FILE)
+    c = conn.cursor()
+    c.execute('''CREATE TABLE IF NOT EXISTS bots (bot_id TEXT PRIMARY KEY, config TEXT, state TEXT)''')
+    c.execute('''CREATE TABLE IF NOT EXISTS trades (id INTEGER PRIMARY KEY AUTOINCREMENT, bot_id TEXT, symbol TEXT, type TEXT, price REAL, amount REAL, profit REAL, date TEXT)''')
+    conn.commit()
+    conn.close()
+
+def save_bot_to_db(bot_id, config, state):
+    conn = sqlite3.connect(DB_FILE)
+    c = conn.cursor()
+    c.execute("INSERT OR REPLACE INTO bots (bot_id, config, state) VALUES (?, ?, ?)", (bot_id, json.dumps(config), json.dumps(state)))
+    conn.commit()
+    conn.close()
+
+def load_bots_from_db():
+    bots = {}
+    if not os.path.exists(DB_FILE): init_db()
+    conn = sqlite3.connect(DB_FILE)
+    c = conn.cursor()
+    c.execute("SELECT bot_id, config, state FROM bots")
+    rows = c.fetchall()
+    for row in rows:
+        bots[row[0]] = {"config": json.loads(row[1]), "state": json.loads(row[2])}
+        bots[row[0]]["state"]["is_running"] = False # Пауза при старте для безопасности
+    conn.close()
+    return bots
+
+def log_trade(bot_id, symbol, type, price, amount, profit=0):
+    conn = sqlite3.connect(DB_FILE)
+    c = conn.cursor()
+    now = datetime.datetime.now(UZ_TZ).strftime("%Y-%m-%d %H:%M:%S")
+    c.execute("INSERT INTO trades (bot_id, symbol, type, price, amount, profit, date) VALUES (?, ?, ?, ?, ?, ?, ?)", (bot_id, symbol, type, price, amount, profit, now))
+    conn.commit()
+    conn.close()
+
+# ==========================================
+# ⚙️ SYSTEM LOGIC
+# ==========================================
+async def init_exchange():
+    global exchange
+    if exchange: await exchange.close()
+    exchange = ccxt.mexc({'apiKey': MEXC_API_KEY, 'secret': MEXC_SECRET_KEY, 'enableRateLimit': True, 'options': {'defaultType': 'spot'}})
+
+async def safe_api_call(func, *args, **kwargs):
+    try: return await func(*args, **kwargs)
+    except: return None
+
+def get_default_state(): return {"is_running": False, "last_trade_time": 0, "inventory": 0.0, "inventory_cost": 0.0, "consecutive_losses": 0}
+
+async def process_bot(bot_id, context):
+    bot = BOTS.get(bot_id)
+    if not bot or not bot["state"]["is_running"]: return
+    cfg = bot["config"]; st = bot["state"]; symbol = cfg["symbol"]
+    chat_id = ALLOWED_USER_ID
+
+    # 1. DATA COLLECTION
+    res = await asyncio.gather(
+        safe_api_call(exchange.fetch_ticker, symbol), 
+        safe_api_call(exchange.fetch_ohlcv, symbol, '5m', limit=30)
+    )
+    ticker, candles = res[0], res[1]
+    if not ticker or not candles: return
+
+    curr = ticker['last']
+    closes = [c[4] for c in candles]
+
+    # --- 🧠 EXPERT SYSTEM LAYER ---
+    market_regime = analyze_regime(closes)
+    
+    # АВТО-АДАПТАЦИЯ
+    adjusted_drop = cfg["drop"]
+    adjusted_amount = cfg["amount"]
+    
+    # Если на рынке ШТОРМ (Паника)
+    if market_regime == "STORM":
+        if st["inventory"] == 0:
+            # Если мы еще не купили - лучше не входить, или входить очень низко
+            adjusted_drop = cfg["drop"] * 3.0 # Ждем падения в 3 раза сильнее обычного
+            print(f"🌪 STORM MODE: {symbol} Drop increased to {adjusted_drop}%")
+    
+    # Если было много убытков подряд (Самолечение)
+    if st.get("consecutive_losses", 0) >= 2:
+        adjusted_amount = cfg["amount"] / 2 # Снижаем ставку в 2 раза
+        # print(f"🩹 HEALING MODE: Amount reduced to {adjusted_amount}")
+    # -------------------------------
+
+    # 2. SELL LOGIC
+    if st["inventory"] > 0:
+        avg = st["inventory_cost"] / st["inventory"]
         
-        /* HEADER */
-        .header { padding: 20px; display: flex; justify-content: space-between; align-items: center; background: rgba(0,0,0,0.8); backdrop-filter: blur(10px); position: sticky; top: 0; z-index: 100; border-bottom: 1px solid #333; }
-        .logo { font-size: 18px; font-weight: 700; color: white; }
-        .logo span { color: var(--primary); }
-        .lang-btn { background: #333; color: white; border: none; padding: 5px 10px; border-radius: 8px; font-size: 10px; }
-
-        /* CARDS */
-        .card { margin: 20px; padding: 20px; background: var(--glass); border: 1px solid #333; border-radius: 20px; position: relative; overflow: hidden; }
-        .equity-title { font-size: 12px; color: var(--text-sec); text-transform: uppercase; }
-        .equity-val { font-size: 32px; font-weight: 700; margin: 10px 0; text-shadow: 0 0 15px rgba(41,98,255,0.4); }
-        .live-badge { position: absolute; top: 20px; right: 20px; font-size: 10px; color: var(--success); display: flex; align-items: center; gap: 5px; }
-        .blink { width: 6px; height: 6px; background: var(--success); border-radius: 50%; box-shadow: 0 0 5px var(--success); animation: pulse 1.5s infinite; }
-        
-        /* LOGS WIDGET */
-        .log-widget { background: #000; border: 1px dashed #444; border-radius: 12px; padding: 10px; height: 80px; overflow: hidden; font-family: monospace; font-size: 10px; color: var(--accent); cursor: pointer; }
-        .log-line { margin-bottom: 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-
-        /* BOT LIST */
-        .bot-card { display: flex; justify-content: space-between; align-items: center; padding: 15px; background: rgba(255,255,255,0.03); border-radius: 12px; margin-bottom: 10px; cursor: pointer; border-left: 3px solid var(--primary); }
-        .bot-card.paused { border-left: 3px solid #555; opacity: 0.7; }
-
-        /* MODAL */
-        .modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #000; z-index: 200; display: none; flex-direction: column; }
-        .modal-header { padding: 20px; border-bottom: 1px solid #333; display: flex; justify-content: space-between; align-items: center; }
-        .modal-body { padding: 20px; overflow-y: auto; flex: 1; }
-        .close-icon { font-size: 24px; cursor: pointer; color: var(--danger); }
-
-        /* LOG HISTORY MODAL */
-        .log-history-box { font-family: monospace; font-size: 11px; color: #0f0; padding: 10px; line-height: 1.5; }
-        .hist-time { color: #888; }
-
-        /* INPUTS */
-        input { width: 100%; background: #111; border: 1px solid #333; padding: 12px; border-radius: 10px; color: white; margin-bottom: 10px; box-sizing: border-box; }
-        label { font-size: 11px; color: var(--text-sec); display: block; margin-bottom: 5px; }
-        
-        /* SWITCH */
-        .switch-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; background: #111; padding: 10px; border-radius: 10px; }
-        .switch { position: relative; display: inline-block; width: 40px; height: 22px; }
-        .switch input { opacity: 0; width: 0; height: 0; }
-        .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #333; transition: .4s; border-radius: 20px; }
-        .slider:before { position: absolute; content: ""; height: 18px; width: 18px; left: 2px; bottom: 2px; background-color: white; transition: .4s; border-radius: 50%; }
-        input:checked + .slider { background-color: var(--success); }
-        input:checked + .slider:before { transform: translateX(18px); }
-
-        .btn-save { width: 100%; padding: 16px; background: var(--primary); border: none; border-radius: 12px; color: white; font-weight: bold; margin-top: 10px; }
-        .btn-sync { width: 100%; padding: 12px; background: rgba(0, 229, 255, 0.1); border: 1px solid var(--accent); color: var(--accent); border-radius: 12px; margin-top: 10px; cursor: pointer; text-transform: uppercase; font-size: 11px; letter-spacing: 1px; }
-
-        .fab { position: fixed; bottom: 20px; right: 20px; width: 50px; height: 50px; background: var(--primary); border-radius: 50%; color: white; display: flex; align-items: center; justify-content: center; font-size: 24px; box-shadow: 0 0 20px rgba(41,98,255,0.5); z-index: 90; }
-        @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.5; } 100% { opacity: 1; } }
-    </style>
-</head>
-<body>
-
-    <div class="header">
-        <div class="logo">QUANTUM <span>V76</span></div>
-        <button class="lang-btn" onclick="toggleLang()">🌐 UZ / RU</button>
-    </div>
-
-    <div id="page-home">
-        <div class="card">
-            <div class="live-badge"><div class="blink"></div> LIVE (5m)</div>
-            <div class="equity-title" id="t-bal">REAL BALANCE</div>
-            <div class="equity-val">$ <span id="balance-val">---</span></div>
-            <div style="font-size:10px; color:#555;">Verified by MEXC API</div>
-            
-            <button class="btn-sync" onclick="sync()">🔄 SYNC TO SERVER</button>
-        </div>
-
-        <div style="margin: 0 20px;">
-            <div style="font-size:12px; color:#888; margin-bottom:5px;">SYSTEM LOGS (TAP TO VIEW)</div>
-            <div class="log-widget" onclick="openLogHistory()">
-                <div id="log-preview">
-                    <div class="log-line">> System initialized</div>
-                    <div class="log-line">> Waiting for 5m candle close...</div>
-                </div>
-            </div>
-        </div>
-
-        <div style="margin: 20px;">
-            <div style="font-size:12px; color:#888; margin-bottom:5px;">ACTIVE BOTS</div>
-            <div id="bot-list"></div>
-        </div>
-    </div>
-
-    <div id="log-modal" class="modal">
-        <div class="modal-header">
-            <span>📜 SYSTEM LOGS</span>
-            <span class="close-icon" onclick="document.getElementById('log-modal').style.display='none'">×</span>
-        </div>
-        <div class="modal-body" style="background:#000;">
-            <div id="full-history" class="log-history-box"></div>
-        </div>
-    </div>
-
-    <div id="settings-modal" class="modal">
-        <div class="modal-header">
-            <span id="t-conf">CONFIGURATION</span>
-            <span class="close-icon" onclick="closeSettings()">×</span>
-        </div>
-        <div class="modal-body">
-            <input type="hidden" id="edit-id">
-            
-            <label>Pair</label><input type="text" id="edit-symbol" style="color:var(--accent); font-weight:bold;">
-            
-            <div class="switch-row">
-                <span>STATUS (ON/OFF)</span>
-                <label class="switch"><input type="checkbox" id="edit-status"><span class="slider"></span></label>
-            </div>
-
-            <label style="color:var(--primary);">Max Budget ($)</label><input type="number" id="edit-budget">
-            
-            <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
-                <div><label>Amount ($)</label><input type="number" id="edit-amount"></div>
-                <div><label>Step (%)</label><input type="number" id="edit-drop"></div>
-            </div>
-
-            <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
-                <div><label>Take Profit %</label><input type="number" id="edit-tp"></div>
-                <div><label style="color:var(--danger);">Stop Loss %</label><input type="number" id="edit-sl"></div>
-            </div>
-
-            <div style="margin-top:20px; border-top:1px solid #333; padding-top:10px; font-size:10px; color:#666;">5M TIMEFRAME FILTERS</div>
-            
-            <div class="switch-row">
-                <span>EMA 200 (Trend)</span>
-                <label class="switch"><input type="checkbox" id="edit-ema"><span class="slider"></span></label>
-            </div>
-            <div class="switch-row">
-                <span>RSI < 30 (Oversold)</span>
-                <label class="switch"><input type="checkbox" id="edit-rsi"><span class="slider"></span></label>
-            </div>
-            <div class="switch-row">
-                <span>ATR (Volatility)</span>
-                <label class="switch"><input type="checkbox" id="edit-atr"><span class="slider"></span></label>
-            </div>
-
-            <button class="btn-save" onclick="saveBot()" id="t-save">SAVE & APPLY</button>
-            <button style="width:100%; background:transparent; color:var(--danger); border:1px solid var(--danger); padding:10px; border-radius:10px; margin-top:10px;" onclick="delBot()">DELETE STRATEGY</button>
-            <div style="height:50px;"></div>
-        </div>
-    </div>
-
-    <div class="fab" onclick="addBot()">+</div>
-
-    <script>
-        const tg = window.Telegram.WebApp; tg.expand();
-
-        // 1. ПОЛУЧЕНИЕ БАЛАНСА ИЗ URL (ОТ БОТА)
-        const params = new URLSearchParams(window.location.search);
-        if(params.has('bal')) {
-            document.getElementById('balance-val').innerText = params.get('bal');
-        } else {
-            // Если открыли без ссылки, берем из памяти
-            document.getElementById('balance-val').innerText = localStorage.getItem('last_bal') || '0.00';
-        }
-
-        // LANG
-        let lang = 'ru';
-        const t = {
-            ru: {bal:"БАЛАНС БИРЖИ", conf:"НАСТРОЙКИ", save:"СОХРАНИТЬ"},
-            uz: {bal:"BIRJA BALANSI", conf:"SOZLAMALAR", save:"SAQLASH"}
-        };
-        function toggleLang() {
-            lang = (lang==='ru')?'uz':'ru';
-            document.getElementById('t-bal').innerText = t[lang].bal;
-            document.getElementById('t-conf').innerText = t[lang].conf;
-            document.getElementById('t-save').innerText = t[lang].save;
-        }
-
-        // LOGS SYSTEM
-        let logs = JSON.parse(localStorage.getItem('v76_logs')) || [];
-        function addLog(msg) {
-            const time = new Date().toLocaleTimeString();
-            logs.unshift(`<span class="hist-time">[${time}]</span> ${msg}`);
-            if(logs.length > 50) logs.pop();
-            localStorage.setItem('v76_logs', JSON.stringify(logs));
-            updateLogView();
-        }
-        function updateLogView() {
-            // Preview
-            const preview = logs.slice(0, 3).map(l => `<div class="log-line">${l}</div>`).join('');
-            document.getElementById('log-preview').innerHTML = preview || '<div class="log-line">System ready.</div>';
-            // Full
-            document.getElementById('full-history').innerHTML = logs.join('<br>');
-        }
-        updateLogView();
-
-        // BOTS LOGIC
-        let bots = JSON.parse(localStorage.getItem('v76_bots')) || [];
-
-        function render() {
-            const c = document.getElementById('bot-list'); c.innerHTML='';
-            bots.forEach(b => {
-                const d = document.createElement('div');
-                d.className = `bot-card ${b.status?'':'paused'}`;
-                d.innerHTML = `<div><b>${b.symbol}</b><br><span style="font-size:10px; color:#888;">$${b.amount} | Risk: ${b.budget}$</span></div>
-                               <div style="font-size:20px;">${b.status?'🟢':'🔴'}</div>`;
-                d.onclick=()=>edit(b.id);
-                c.appendChild(d);
-            });
-        }
-
-        function addBot() {
-            const id='B'+Date.now();
-            bots.push({id, symbol:'ETH/USDT', status:false, budget:100, amount:10, drop:0.5, tp:0.5, sl:0, ema:true, rsi:true, atr:true});
-            addLog(`New strategy created: ${id}`);
-            render(); edit(id);
-        }
-
-        function edit(id) {
-            const b = bots.find(x=>x.id===id);
-            document.getElementById('edit-id').value=id;
-            document.getElementById('edit-symbol').value=b.symbol;
-            document.getElementById('edit-status').checked=b.status;
-            document.getElementById('edit-budget').value=b.budget;
-            document.getElementById('edit-amount').value=b.amount;
-            document.getElementById('edit-drop').value=b.drop;
-            document.getElementById('edit-tp').value=b.tp;
-            document.getElementById('edit-sl').value=b.sl;
-            document.getElementById('edit-ema').checked=b.ema;
-            document.getElementById('edit-rsi').checked=b.rsi;
-            document.getElementById('edit-atr').checked=b.atr;
-            document.getElementById('settings-modal').style.display='flex';
-        }
-
-        function saveBot() {
-            const id=document.getElementById('edit-id').value;
-            const idx=bots.findIndex(x=>x.id===id);
-            if(idx>-1) {
-                bots[idx].symbol = document.getElementById('edit-symbol').value.toUpperCase();
-                bots[idx].status = document.getElementById('edit-status').checked;
-                bots[idx].budget = parseFloat(document.getElementById('edit-budget').value);
-                bots[idx].amount = parseFloat(document.getElementById('edit-amount').value);
-                bots[idx].drop = parseFloat(document.getElementById('edit-drop').value);
-                bots[idx].tp = parseFloat(document.getElementById('edit-tp').value);
-                bots[idx].sl = parseFloat(document.getElementById('edit-sl').value);
-                bots[idx].ema = document.getElementById('edit-ema').checked;
-                bots[idx].rsi = document.getElementById('edit-rsi').checked;
-                bots[idx].atr = document.getElementById('edit-atr').checked;
-                localStorage.setItem('v76_bots', JSON.stringify(bots));
-                addLog(`Updated ${bots[idx].symbol}. Waiting for sync...`);
-            }
-            closeSettings(); render();
-        }
-
-        function delBot() {
-            if(confirm('Delete?')) {
-                const id=document.getElementById('edit-id').value;
-                bots=bots.filter(x=>x.id!==id);
-                localStorage.setItem('v76_bots', JSON.stringify(bots));
-                closeSettings(); render();
-            }
-        }
-
-        function sync() {
-            if(confirm('Sync settings to Server?')) {
-                // Save current balance to remember it
-                const bal = document.getElementById('balance-val').innerText;
-                localStorage.setItem('last_bal', bal);
+        # STOP LOSS
+        if cfg.get("sl", 0) > 0:
+            loss_pct = (avg - curr)/avg*100
+            if loss_pct >= cfg["sl"]:
+                amt = float(exchange.amount_to_precision(symbol, st["inventory"]))
+                await safe_api_call(exchange.create_market_sell_order, symbol, amt)
+                loss = (amt*curr) - st["inventory_cost"]
                 
-                tg.sendData(JSON.stringify({type:'SYNC', bots:bots}));
-            }
-        }
+                # Записываем боль
+                st["inventory"]=0; st["inventory_cost"]=0
+                st["consecutive_losses"] = st.get("consecutive_losses", 0) + 1
+                
+                save_bot_to_db(bot_id, cfg, st)
+                log_trade(bot_id, symbol, "STOP_LOSS", curr, amt, loss)
+                await context.bot.send_message(chat_id, f"⚠️ <b>STOP LOSS</b> ({st['consecutive_losses']} streak)\nLoss: ${abs(loss):.2f}", parse_mode='HTML')
+                return
 
-        function closeSettings() { document.getElementById('settings-modal').style.display='none'; }
-        function openLogHistory() { document.getElementById('log-modal').style.display='flex'; }
+        # TAKE PROFIT
+        if curr >= avg * (1 + cfg["tp"]/100):
+            amt = float(exchange.amount_to_precision(symbol, st["inventory"]))
+            await safe_api_call(exchange.create_market_sell_order, symbol, amt)
+            profit = (amt*curr) - st["inventory_cost"]
+            
+            # Сбрасываем счетчик боли при победе
+            st["inventory"]=0; st["inventory_cost"]=0
+            st["consecutive_losses"] = 0 
+            
+            save_bot_to_db(bot_id, cfg, st)
+            log_trade(bot_id, symbol, "SELL_TP", curr, amt, profit)
+            await context.bot.send_message(chat_id, f"💰 <b>PROFIT</b>\n+${profit:.2f}", parse_mode='HTML')
 
-        render();
-    </script>
-</body>
-</html>
+    # 3. BUY LOGIC
+    if (time.time() - st["last_trade_time"]) > 120: 
+        buy_signal = False; amt_usd = 0
+        
+        # Первый вход
+        if st["inventory"] == 0:
+            # Покупаем сразу по текущей (или можно добавить условие RSI < 30)
+            buy_signal = True; amt_usd = adjusted_amount
+        # Усреднение
+        else:
+            avg = st["inventory_cost"] / st["inventory"]
+            # Используем УМНЫЙ adjusted_drop
+            if curr < avg * (1 - adjusted_drop/100): 
+                buy_signal = True; amt_usd = adjusted_amount * 1.5
+
+        if buy_signal:
+            max_b = cfg.get("budget", 100)
+            if (st["inventory_cost"] + amt_usd) > max_b: return
+
+            amt_coin = amt_usd / curr
+            if amt_usd < 5.1: amt_coin = 5.5 / curr
+            
+            amt_cl = float(exchange.amount_to_precision(symbol, amt_coin))
+            prc_cl = float(exchange.price_to_precision(symbol, curr))
+            
+            res = await safe_api_call(exchange.create_limit_buy_order, symbol, amt_cl, prc_cl)
+            if res:
+                st["inventory"]+=amt_cl; st["inventory_cost"]+=(amt_cl*prc_cl); st["last_trade_time"]=time.time()
+                save_bot_to_db(bot_id, cfg, st)
+                log_trade(bot_id, symbol, "BUY", prc_cl, amt_cl)
+                
+                status_icon = "🌪" if market_regime == "STORM" else "🟢"
+                await context.bot.send_message(chat_id, f"{status_icon} <b>BUY {symbol}</b>\nCost: ${amt_usd:.2f}\nMode: {market_regime}", parse_mode='HTML')
+
+async def global_job(context: ContextTypes.DEFAULT_TYPE):
+    if not exchange: await init_exchange()
+    tasks = [process_bot(bid, context) for bid in list(BOTS.keys())]
+    if tasks: await asyncio.gather(*tasks)
+
+async def web_app_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    if update.effective_user.id != ALLOWED_USER_ID: return
+    try:
+        data = json.loads(update.effective_message.web_app_data.data)
+        if data.get("type") == "SYNC":
+            bots_list = data.get("bots", [])
+            cnt = 0
+            for b in bots_list:
+                bid = b["id"]
+                # Сохраняем настройки
+                new_cfg = {"symbol": b["symbol"], "amount": b["amount"], "drop": b["drop"], "tp": b["tp"], "sl": b.get("sl", 0), "budget": b.get("budget", 100)}
+                if bid not in BOTS: BOTS[bid] = {"config": new_cfg, "state": get_default_state()}
+                else: BOTS[bid]["config"] = new_cfg
+                
+                BOTS[bid]["state"]["is_running"] = b["status"]
+                save_bot_to_db(bid, new_cfg, BOTS[bid]["state"])
+                cnt += 1
+            await update.message.reply_text(f"🧠 <b>Expert System Updated!</b>\nSynced {cnt} bots.", parse_mode='HTML')
+    except Exception as e: await update.message.reply_text(f"Err: {e}")
+
+async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    if update.effective_user.id != ALLOWED_USER_ID: return
+    await init_exchange()
+    bal_str = "0.00"
+    try:
+        bal = await exchange.fetch_balance()
+        usdt = bal.get('USDT', {}).get('free', 0)
+        bal_str = f"{usdt:.2f}"
+    except: pass
+    
+    final_url = f"{WEB_APP_URL}?bal={bal_str}"
+    kb = [[KeyboardButton("🧠 OPEN EXPERT DASHBOARD", web_app=WebAppInfo(url=final_url))]]
+    await update.message.reply_text("🧬 <b>V77 Expert System</b>\nAuto-adaptation enabled.", reply_markup=ReplyKeyboardMarkup(kb, resize_keyboard=True), parse_mode='HTML')
+
+if __name__ == '__main__':
+    init_db()
+    BOTS = load_bots_from_db()
+    defaults = Defaults(tzinfo=datetime.timezone.utc)
+    app = ApplicationBuilder().token(TELEGRAM_TOKEN).defaults(defaults).build()
+    app.job_queue.run_repeating(global_job, interval=CHECK_INTERVAL, first=3)
+    app.add_handler(CommandHandler('start', start))
+    app.add_handler(MessageHandler(filters.StatusUpdate.WEB_APP_DATA, web_app_handler))
+    print("🤖 V77 EXPERT SYSTEM STARTED")
+    app.run_polling()
