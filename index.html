@@ -3,256 +3,233 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>Onyx V80</title>
+    <title>Onyx V81</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400&display=swap');
         
-        :root {
-            --bg: #0b0e11; 
-            --card: #151a21;
-            --gold: #D4AF37;
-            --green: #27ae60;
-            --red: #e74c3c;
-            --text: #ffffff;
-            --text-sub: #8b9bb4;
-            --border: 1px solid rgba(255,255,255,0.05);
-        }
+        :root { --bg: #0b0e11; --card: #151a21; --gold: #D4AF37; --green: #27ae60; --red: #e74c3c; --text: #fff; --sub: #8b9bb4; --border: 1px solid rgba(255,255,255,0.05); }
+        body { background: var(--bg); color: var(--text); font-family: 'Inter', sans-serif; margin: 0; padding: 15px; padding-bottom: 100px; font-size: 13px; }
 
-        body {
-            background: var(--bg); color: var(--text);
-            font-family: 'Inter', sans-serif;
-            margin: 0; padding: 15px; padding-bottom: 100px;
-            font-size: 13px;
-        }
+        /* HEADER */
+        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+        .brand { font-size: 18px; font-weight: 600; color: var(--gold); }
+        .lang-select { background: var(--card); color: var(--text); border: var(--border); padding: 5px; border-radius: 6px; outline: none; }
 
-        /* HEADER & LANG */
-        .header {
-            display: flex; justify-content: space-between; align-items: center;
-            margin-bottom: 20px;
-        }
-        .brand { font-size: 18px; font-weight: 600; color: var(--gold); letter-spacing: 1px; display: flex; align-items: center; gap: 8px;}
-        .lang-select {
-            background: var(--card); color: var(--text);
-            border: var(--border); padding: 5px; border-radius: 6px;
-            font-size: 11px; outline: none;
-        }
-        .live-dot { width: 6px; height: 6px; background: var(--green); border-radius: 50%; box-shadow: 0 0 8px var(--green); }
-
-        /* BIG BALANCE CARD */
-        .balance-card {
-            background: linear-gradient(145deg, #1e232b, #151a21);
-            border-radius: 12px; padding: 20px;
-            border: 1px solid rgba(212, 175, 55, 0.2);
-            position: relative; overflow: hidden;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
-            margin-bottom: 20px;
-        }
-        .balance-card::after {
-            content: ''; position: absolute; top: -50%; left: -50%; width: 200%; height: 200%;
-            background: radial-gradient(circle, rgba(212,175,55,0.05) 0%, transparent 70%);
-        }
-        .bal-title { color: var(--text-sub); font-size: 11px; text-transform: uppercase; margin-bottom: 5px; }
+        /* BALANCE */
+        .balance-card { background: linear-gradient(145deg, #1e232b, #151a21); border-radius: 12px; padding: 20px; border: 1px solid rgba(212,175,55,0.2); margin-bottom: 20px; position: relative; box-shadow: 0 10px 30px rgba(0,0,0,0.3); }
+        .bal-title { color: var(--sub); font-size: 11px; text-transform: uppercase; }
         .bal-value { font-size: 32px; font-weight: 600; color: #fff; }
-        .refresh-icon { position: absolute; top: 15px; right: 15px; font-size: 16px; cursor: pointer; opacity: 0.7; }
+        .refresh-icon { position: absolute; top: 15px; right: 15px; font-size: 18px; cursor: pointer; }
 
         /* TABS */
-        .tabs { display: flex; gap: 10px; margin-bottom: 15px; }
-        .tab { 
-            flex: 1; text-align: center; padding: 10px; 
-            background: var(--card); border-radius: 8px; 
-            color: var(--text-sub); cursor: pointer; transition: 0.3s;
-            border: var(--border); font-size: 11px;
-        }
+        .tabs { display: flex; gap: 8px; margin-bottom: 15px; overflow-x: auto; }
+        .tab { flex: 1; text-align: center; padding: 10px; background: var(--card); border-radius: 8px; color: var(--sub); border: var(--border); font-size: 11px; cursor: pointer; white-space: nowrap; }
         .tab.active { background: rgba(212, 175, 55, 0.1); color: var(--gold); border-color: var(--gold); }
 
-        /* CONTENT AREAS */
-        .content-area { display: none; animation: fade 0.3s; }
-        .content-area.active { display: block; }
+        /* CONTENT */
+        .content { display: none; }
+        .content.active { display: block; animation: fade 0.3s; }
         @keyframes fade { from{opacity:0} to{opacity:1} }
 
-        /* WALLET LIST */
-        .wallet-item { display: flex; justify-content: space-between; align-items: center; background: var(--card); padding: 12px; border-radius: 8px; margin-bottom: 8px; border: var(--border); }
-        .coin-info { display: flex; align-items: center; gap: 10px; }
-        .coin-img { width: 24px; height: 24px; border-radius: 50%; background: #333; }
-        .coin-name { font-weight: 600; }
-        .coin-amt { font-family: monospace; color: var(--gold); }
-
-        /* HISTORY LIST */
-        .hist-item { display: flex; justify-content: space-between; padding: 12px; background: var(--card); margin-bottom: 8px; border-radius: 8px; border: var(--border); font-size: 11px; }
-        .h-buy { color: var(--green); } .h-sell { color: var(--gold); }
-
-        /* STRATEGY CARDS */
-        .bot-card { background: var(--card); border-radius: 10px; padding: 15px; margin-bottom: 10px; border: var(--border); transition: 0.3s; position: relative; }
+        /* BOTS */
+        .bot-card { background: var(--card); border-radius: 10px; padding: 15px; margin-bottom: 10px; border: var(--border); position: relative; }
         .bot-card.running { border-left: 3px solid var(--green); }
         .bot-card.paused { border-left: 3px solid #555; }
-        .bot-top { display: flex; justify-content: space-between; margin-bottom: 10px; }
+        .bot-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+        .bot-sym { font-weight: 600; font-size: 15px; }
+        .settings-icon { font-size: 16px; color: var(--sub); cursor: pointer; padding: 5px; }
+        
         .inp-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; }
-        .inp-group input { width: 100%; background: #0b0e11; border: 1px solid #333; color: #fff; padding: 8px; border-radius: 6px; box-sizing: border-box; }
+        input { width: 100%; background: #0b0e11; border: 1px solid #333; color: #fff; padding: 8px; border-radius: 6px; box-sizing: border-box; }
+        
         .bot-controls { display: flex; gap: 8px; margin-top: 10px; }
         .btn { flex: 1; padding: 8px; border-radius: 6px; border: none; font-weight: 600; cursor: pointer; font-size: 11px; }
         .btn-run { background: rgba(39, 174, 96, 0.2); color: var(--green); border: 1px solid var(--green); }
         .btn-stop { background: rgba(255, 255, 255, 0.1); color: #ccc; }
 
-        /* FOOTER ACTIONS */
-        .main-actions { position: fixed; bottom: 0; left: 0; width: 100%; background: rgba(11, 14, 17, 0.95); padding: 15px; box-sizing: border-box; display: flex; gap: 10px; backdrop-filter: blur(10px); border-top: var(--border); }
-        .action-btn { flex: 1; padding: 14px; border-radius: 8px; border: none; font-weight: 600; cursor: pointer; font-size: 12px; text-transform: uppercase; }
-        .save-local { background: #1e232b; color: #fff; border: 1px solid #333; }
-        .deploy { background: var(--gold); color: #000; }
+        /* ADVANCED SETTINGS MODAL */
+        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 1000; justify-content: center; align-items: center; }
+        .modal-content { background: var(--card); width: 85%; padding: 20px; border-radius: 12px; border: 1px solid var(--gold); }
+        .modal-title { font-size: 16px; color: var(--gold); margin-bottom: 15px; font-weight: bold; }
+        .modal-row { margin-bottom: 10px; }
+        .modal-row label { display: block; color: var(--sub); font-size: 10px; margin-bottom: 5px; }
+        .modal-close { background: var(--gold); color: #000; width: 100%; padding: 10px; margin-top: 10px; border-radius: 6px; border: none; font-weight: bold; cursor: pointer; }
 
+        /* WALLET */
+        .wallet-item { display: flex; justify-content: space-between; background: var(--card); padding: 12px; border-radius: 8px; margin-bottom: 8px; border: var(--border); }
+        .coin-val { text-align: right; color: var(--green); font-size: 11px; }
+
+        /* LOGS */
+        .log-box { background: #000; padding: 10px; border-radius: 8px; font-family: 'JetBrains Mono', monospace; font-size: 10px; color: var(--green); height: 300px; overflow-y: auto; border: 1px solid #333; }
+        .log-line { margin-bottom: 5px; border-bottom: 1px solid #111; padding-bottom: 2px; }
+        .log-time { color: #555; margin-right: 5px; }
+
+        /* FOOTER */
+        .main-actions { position: fixed; bottom: 0; left: 0; width: 100%; background: rgba(11,14,17,0.95); padding: 15px; display: flex; gap: 10px; border-top: var(--border); box-sizing: border-box; }
+        .action-btn { flex: 1; padding: 14px; border-radius: 8px; border: none; font-weight: 600; cursor: pointer; font-size: 12px; text-transform: uppercase; }
+        .save { background: #1e232b; color: #fff; border: 1px solid #333; }
+        .deploy { background: var(--gold); color: #000; }
     </style>
 </head>
 <body>
 
     <div class="header">
-        <div class="brand"><span class="live-dot"></span> ONYX V80</div>
+        <div class="brand">ONYX V81</div>
         <select class="lang-select" id="lang" onchange="changeLang()">
-            <option value="en">🇺🇸 EN</option>
-            <option value="ru">🇷🇺 RU</option>
-            <option value="uz">🇺🇿 UZ</option>
+            <option value="en">EN</option><option value="ru">RU</option><option value="uz">UZ</option>
         </select>
     </div>
 
     <div class="balance-card">
-        <div class="refresh-icon" onclick="requestRefresh()">↻</div>
-        <div class="bal-title" id="t_bal">Total Balance (USDT)</div>
+        <div class="refresh-icon" onclick="reqRefresh()">↻</div>
+        <div class="bal-title" id="t_bal">Total Equity</div>
         <div class="bal-value">$ <span id="main_bal">...</span></div>
     </div>
 
     <div class="tabs">
         <div class="tab active" onclick="tab('bots')" id="t_bots">Strategies</div>
         <div class="tab" onclick="tab('wallet')" id="t_wallet">Wallet</div>
-        <div class="tab" onclick="tab('history')" id="t_hist">History</div>
+        <div class="tab" onclick="tab('logs')" id="t_logs">Terminal</div>
+        <div class="tab" onclick="tab('hist')" id="t_hist">History</div>
     </div>
 
-    <div id="view-bots" class="content-area active">
+    <div id="view-bots" class="content active">
         <div id="bots_list"></div>
-        <div style="text-align: center; margin-top: 15px; color: var(--gold); cursor: pointer;" onclick="addBot()">+ <span id="t_add">ADD</span></div>
+        <div style="text-align:center; margin-top:15px; color:var(--gold); cursor:pointer" onclick="addBot()">+ ADD</div>
     </div>
 
-    <div id="view-wallet" class="content-area">
+    <div id="view-wallet" class="content">
         <div id="wallet_list"></div>
     </div>
 
-    <div id="view-history" class="content-area">
+    <div id="view-logs" class="content">
+        <div class="log-box" id="log_box">
+            <div class="log-line"><span class="log-time">SYSTEM</span> Connected to Onyx Core v81...</div>
+            <div class="log-line"><span class="log-time">SYSTEM</span> Waiting for updates...</div>
+        </div>
+    </div>
+
+    <div id="view-hist" class="content">
         <div id="hist_list"></div>
     </div>
 
-    <div style="height: 80px;"></div>
+    <div style="height:80px"></div>
 
     <div class="main-actions">
-        <button class="action-btn save-local" onclick="saveLocal()" id="t_save">💾 Save Draft</button>
-        <button class="action-btn deploy" onclick="deploy()" id="t_deploy">🚀 Deploy</button>
+        <button class="action-btn save" onclick="save()" id="t_save">Save Draft</button>
+        <button class="action-btn deploy" onclick="deploy()" id="t_deploy">Deploy</button>
+    </div>
+
+    <div id="modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-title">Advanced Config</div>
+            <input type="hidden" id="edit_id">
+            <div class="modal-row"><label>RSI Limit (<)</label><input type="number" id="m_rsi"></div>
+            <div class="modal-row"><label>Max Budget ($)</label><input type="number" id="m_bud"></div>
+            <div class="modal-row"><label>AI Trend Filter</label><select id="m_ema" style="width:100%;padding:8px;background:#000;color:#fff;border:1px solid #333"><option value="true">ON</option><option value="false">OFF</option></select></div>
+            <button class="modal-close" onclick="closeModal()">DONE</button>
+        </div>
     </div>
 
     <script>
         const tg = window.Telegram.WebApp; tg.expand();
-
-        // 1. DATA PARSING
-        const urlParams = new URLSearchParams(window.location.search);
+        const urlP = new URLSearchParams(window.location.search);
         
-        // Balance
-        const balParam = urlParams.get('bal');
-        if(balParam) { document.getElementById('main_bal').innerText = balParam; localStorage.setItem('cached_main_bal', balParam); }
-        else { document.getElementById('main_bal').innerText = localStorage.getItem('cached_main_bal') || '0.00'; }
-
-        // Wallet
-        const rawW = urlParams.get('w') || "";
-        const walletData = rawW.split(',').filter(x=>x).map(x => { const p = x.split(':'); return { sym: p[0], amt: p[1] }; });
-
-        // History
-        const rawH = urlParams.get('h') || "";
-        const histData = rawH.split('|').filter(x=>x).map(x => { const p = x.split(','); return { sym: p[0], type: p[1], prof: p[2] }; });
-
-        // 2. RENDER WALLET
-        const wList = document.getElementById('wallet_list');
-        if(walletData.length === 0) wList.innerHTML = '<div style="text-align:center;color:#555;padding:20px">Empty</div>';
-        else {
-            wList.innerHTML = walletData.map(c => {
-                const icon = `https://cryptologos.cc/logos/${c.sym.toLowerCase().replace('usdt','tether')}-${c.sym.toLowerCase().replace('usdt','usdt')}-logo.png?v=025`;
-                return `<div class="wallet-item">
-                    <div class="coin-info"><img src="${icon}" class="coin-img" onerror="this.src='https://via.placeholder.com/24'"><span class="coin-name">${c.sym}</span></div>
-                    <div class="coin-amt">${c.amt}</div>
-                </div>`;
-            }).join('');
-        }
-
-        // 3. RENDER HISTORY
-        const hList = document.getElementById('hist_list');
-        if(histData.length === 0) hList.innerHTML = '<div style="text-align:center;color:#555;padding:20px">No trades</div>';
-        else {
-            hList.innerHTML = histData.map(h => {
-                return `<div class="hist-item">
-                    <div><b>${h.sym}</b></div>
-                    <div class="${h.type.includes('BUY')?'h-buy':'h-sell'}">${h.type}</div>
-                    <div style="color:#fff">${h.prof>0?'+':''}${h.prof}$</div>
-                </div>`;
-            }).join('');
-        }
-
-        // 4. BOTS LOGIC
-        let bots = JSON.parse(localStorage.getItem('onyx_bots_v80')) || [];
+        // PARSE DATA
+        const bal = urlP.get('b'); if(bal) document.getElementById('main_bal').innerText = bal;
         
-        function renderBots() {
-            const list = document.getElementById('bots_list'); list.innerHTML = '';
-            bots.forEach((b, i) => {
-                list.innerHTML += `
+        const wallet = (urlP.get('w')||"").split(',').filter(x=>x).map(x=>{const p=x.split(':'); return {s:p[0], a:p[1], v:p[2]}});
+        const hist = (urlP.get('h')||"").split('|').filter(x=>x).map(x=>{const p=x.split(','); return {s:p[0], t:p[1], p:p[2]}});
+
+        // RENDER WALLET
+        const wl = document.getElementById('wallet_list');
+        if(wallet.length===0) wl.innerHTML='<div style="text-align:center;color:#555">Empty</div>';
+        else wl.innerHTML = wallet.map(c=>`
+            <div class="wallet-item">
+                <div><b>${c.s}</b><br><span style="font-size:10px;color:#888">${c.a}</span></div>
+                <div class="coin-val">$${c.v}</div>
+            </div>`).join('');
+
+        // RENDER HISTORY
+        const hl = document.getElementById('hist_list');
+        if(hist.length===0) hl.innerHTML='<div style="text-align:center;color:#555">No Data</div>';
+        else hl.innerHTML = hist.map(h=>`
+            <div class="wallet-item">
+                <div><b>${h.s}</b> <span style="font-size:10px;color:${h.t.includes('BUY')?'var(--green)':'var(--gold)'}">${h.t}</span></div>
+                <div>${h.p}$</div>
+            </div>`).join('');
+
+        // BOTS LOGIC
+        let bots = JSON.parse(localStorage.getItem('onyx_v81')) || [];
+        
+        function renderBots(){
+            const l = document.getElementById('bots_list'); l.innerHTML='';
+            bots.forEach((b,i)=>{
+                l.innerHTML += `
                 <div class="bot-card ${b.status?'running':'paused'}">
                     <div class="bot-top">
-                        <div style="font-weight:600">${b.symbol}</div>
-                        <div style="font-size:10px; color:${b.status?'var(--green)':'#555'}">${b.status?'ACTIVE':'IDLE'}</div>
+                        <div class="bot-sym">${b.symbol}</div>
+                        <div class="settings-icon" onclick="openModal(${i})">⚙️ CONFIG</div>
                     </div>
                     <div class="inp-grid">
-                        <div class="inp-group"><input type="text" value="${b.symbol}" onchange="upd(${i},'symbol',this.value)"></div>
-                        <div class="inp-group"><input type="number" value="${b.amount}" onchange="upd(${i},'amount',this.value)" placeholder="$"></div>
-                        <div class="inp-group"><input type="number" value="${b.drop}" onchange="upd(${i},'drop',this.value)" placeholder="Drop%"></div>
+                        <input type="text" value="${b.symbol}" onchange="upd(${i},'symbol',this.value)">
+                        <input type="number" value="${b.amount}" onchange="upd(${i},'amount',this.value)" placeholder="USD">
+                        <input type="number" value="${b.drop}" onchange="upd(${i},'drop',this.value)" placeholder="Drop%">
                     </div>
                     <div class="bot-controls">
                         <button class="btn btn-run" onclick="tog(${i},true)">START</button>
-                        <button class="btn btn-stop" onclick="tog(${i},false)">PAUSE</button>
+                        <button class="btn btn-stop" onclick="tog(${i},false)">STOP</button>
                         <button class="btn" style="background:#222;color:#555;flex:0 0 30px" onclick="del(${i})">x</button>
                     </div>
                 </div>`;
             });
-            applyLang();
         }
 
-        function upd(i,k,v){ bots[i][k]=(k==='symbol')?v.toUpperCase():parseFloat(v); saveLocal(); }
-        function tog(i,s){ bots[i].status=s; saveLocal(); renderBots(); }
-        function addBot(){ bots.push({id:'B'+Date.now(), symbol:'BTC/USDT', amount:10, drop:0.5, tp:0.5, status:false}); saveLocal(); renderBots(); }
-        function del(i){ if(confirm('Delete?')){bots.splice(i,1); saveLocal(); renderBots();} }
-        function saveLocal(){ localStorage.setItem('onyx_bots_v80', JSON.stringify(bots)); }
-        function deploy(){ saveLocal(); tg.sendData(JSON.stringify({type:"SYNC", bots:bots})); }
-        function requestRefresh(){ tg.sendData(JSON.stringify({type:"REFRESH"})); }
-
-        // 5. LANGUAGE
-        const txt = {
-            en: { bal: "Total Balance", bots: "Strategies", wallet: "Wallet", hist: "History", add: "ADD NEW", save: "Save Draft", deploy: "Deploy" },
-            ru: { bal: "Общий Баланс", bots: "Стратегии", wallet: "Кошелек", hist: "История", add: "ДОБАВИТЬ", save: "Сохранить", deploy: "Запустить" },
-            uz: { bal: "Umumiy Balans", bots: "Strategiyalar", wallet: "Hamyon", hist: "Tarix", add: "QO'SHISH", save: "Saqlash", deploy: "Ishga tushirish" }
-        };
-        
-        let curLang = localStorage.getItem('lang') || 'en';
-        document.getElementById('lang').value = curLang;
-        
-        function changeLang(){ curLang = document.getElementById('lang').value; localStorage.setItem('lang', curLang); applyLang(); }
-        
-        function applyLang(){
-            const t = txt[curLang];
-            document.getElementById('t_bal').innerText = t.bal;
-            document.getElementById('t_bots').innerText = t.bots;
-            document.getElementById('t_wallet').innerText = t.wallet;
-            document.getElementById('t_hist').innerText = t.hist;
-            document.getElementById('t_add').innerText = t.add;
-            document.getElementById('t_save').innerText = t.save;
-            document.getElementById('t_deploy').innerText = t.deploy;
+        // MODAL LOGIC
+        function openModal(i) {
+            document.getElementById('edit_id').value = i;
+            const b = bots[i];
+            document.getElementById('m_rsi').value = b.rsi_limit || 30;
+            document.getElementById('m_bud').value = b.budget || 50;
+            document.getElementById('m_ema').value = b.ema === false ? "false" : "true";
+            document.getElementById('modal').style.display = 'flex';
+        }
+        function closeModal() {
+            const i = document.getElementById('edit_id').value;
+            bots[i].rsi_limit = parseFloat(document.getElementById('m_rsi').value);
+            bots[i].budget = parseFloat(document.getElementById('m_bud').value);
+            bots[i].ema = document.getElementById('m_ema').value === "true";
+            save(); document.getElementById('modal').style.display = 'none';
         }
 
-        function tab(t) {
-            document.querySelectorAll('.content-area').forEach(e=>e.classList.remove('active'));
+        function upd(i,k,v){bots[i][k]=(k==='symbol')?v.toUpperCase():parseFloat(v); save();}
+        function tog(i,s){bots[i].status=s; save(); renderBots();}
+        function addBot(){bots.push({id:'B'+Date.now(), symbol:'BTC/USDT', amount:10, drop:0.5, tp:0.5, status:false}); save(); renderBots();}
+        function del(i){if(confirm('Del?')){bots.splice(i,1); save(); renderBots();}}
+        function save(){localStorage.setItem('onyx_v81', JSON.stringify(bots));}
+        function deploy(){save(); tg.sendData(JSON.stringify({type:"SYNC", bots:bots}));}
+        function reqRefresh(){tg.sendData(JSON.stringify({type:"REFRESH"}));}
+        function tab(t){
+            document.querySelectorAll('.content').forEach(e=>e.classList.remove('active'));
             document.getElementById('view-'+t).classList.add('active');
             document.querySelectorAll('.tab').forEach(e=>e.classList.remove('active'));
             document.getElementById('t_'+t).classList.add('active');
+        }
+
+        // TRANSLATION LOGIC (Simplified)
+        const txt={
+            en:{bal:"Total Equity", bots:"Strategies", wallet:"Wallet"},
+            ru:{bal:"Капитал", bots:"Стратегии", wallet:"Кошелек"},
+            uz:{bal:"Umumiy Sarmoya", bots:"Strategiyalar", wallet:"Hamyon"}
+        };
+        function changeLang(){
+            const l = document.getElementById('lang').value;
+            const t = txt[l];
+            document.getElementById('t_bal').innerText=t.bal;
+            document.getElementById('t_bots').innerText=t.bots;
+            document.getElementById('t_wallet').innerText=t.wallet;
         }
 
         if(bots.length===0) addBot();
