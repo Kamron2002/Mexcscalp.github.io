@@ -3,114 +3,51 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>Onyx V78</title>
+    <title>Onyx AI V79</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&display=swap');
-        
-        :root {
-            --bg: #0b0e11; /* Deep Onyx */
-            --card: #151a21;
-            --gold: #D4AF37;
-            --green: #27ae60;
-            --text: #ffffff;
-            --text-sub: #8b9bb4;
-            --border: 1px solid rgba(255,255,255,0.05);
-        }
+        :root { --bg: #0b0e11; --card: #151a21; --gold: #D4AF37; --green: #27ae60; --red: #e74c3c; --text: #fff; --sub: #8b9bb4; }
+        body { background: var(--bg); color: var(--text); font-family: 'Inter', sans-serif; margin: 0; padding: 15px; padding-bottom: 90px; font-size: 13px; }
 
-        body {
-            background: var(--bg); color: var(--text);
-            font-family: 'Inter', sans-serif;
-            margin: 0; padding: 15px; padding-bottom: 100px;
-            font-size: 13px;
-        }
-
-        /* PREMIUM HEADER */
-        .header {
-            display: flex; justify-content: space-between; align-items: center;
-            margin-bottom: 20px;
-        }
-        .brand { font-size: 18px; font-weight: 600; color: var(--gold); letter-spacing: 1px; }
-        .lang-select {
-            background: var(--card); color: var(--text);
-            border: var(--border); padding: 5px; border-radius: 6px;
-            font-size: 11px; outline: none;
-        }
-
-        /* BALANCE CARD */
-        .balance-card {
-            background: linear-gradient(145deg, #1e232b, #151a21);
-            border-radius: 12px; padding: 20px;
-            border: 1px solid rgba(212, 175, 55, 0.2);
-            position: relative; overflow: hidden;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
-            margin-bottom: 20px;
-        }
-        .balance-card::after {
-            content: ''; position: absolute; top: -50%; left: -50%; width: 200%; height: 200%;
-            background: radial-gradient(circle, rgba(212,175,55,0.05) 0%, transparent 70%);
-        }
-        .bal-title { color: var(--text-sub); font-size: 11px; text-transform: uppercase; margin-bottom: 5px; }
-        .bal-value { font-size: 32px; font-weight: 600; color: #fff; }
-        .refresh-icon { position: absolute; top: 15px; right: 15px; font-size: 16px; cursor: pointer; opacity: 0.7; }
+        /* HEADER */
+        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
+        .brand { font-size: 16px; font-weight: 600; color: var(--gold); display: flex; align-items: center; gap: 8px; }
+        .ai-pulse { width: 8px; height: 8px; background: var(--green); border-radius: 50%; box-shadow: 0 0 10px var(--green); animation: pulse 2s infinite; }
+        @keyframes pulse { 0% {opacity:1} 50% {opacity:0.4} 100% {opacity:1} }
 
         /* TABS */
-        .tabs { display: flex; gap: 10px; margin-bottom: 15px; }
-        .tab { 
-            flex: 1; text-align: center; padding: 10px; 
-            background: var(--card); border-radius: 8px; 
-            color: var(--text-sub); cursor: pointer; transition: 0.3s;
-            border: var(--border);
-        }
-        .tab.active { background: rgba(212, 175, 55, 0.1); color: var(--gold); border-color: var(--gold); }
+        .tabs { display: flex; background: var(--card); padding: 4px; border-radius: 8px; margin-bottom: 20px; }
+        .tab { flex: 1; text-align: center; padding: 8px; border-radius: 6px; color: var(--sub); cursor: pointer; font-size: 11px; }
+        .tab.active { background: #2c3e50; color: #fff; font-weight: 600; }
 
-        /* BOTS LIST */
-        .bot-card {
-            background: var(--card); border-radius: 10px; padding: 15px;
-            margin-bottom: 10px; border: var(--border);
-            transition: 0.3s; position: relative;
-        }
-        .bot-card.running { border-left: 3px solid var(--green); }
-        .bot-card.paused { border-left: 3px solid #555; }
+        /* WALLET */
+        .wallet-item { display: flex; justify-content: space-between; align-items: center; background: var(--card); padding: 12px; border-radius: 8px; margin-bottom: 8px; border: 1px solid rgba(255,255,255,0.05); }
+        .coin-info { display: flex; align-items: center; gap: 10px; }
+        .coin-img { width: 24px; height: 24px; border-radius: 50%; background: #333; }
+        .coin-name { font-weight: 600; }
+        .coin-amt { font-family: monospace; color: var(--gold); }
+
+        /* STRATEGIES */
+        .bot-card { background: var(--card); border-radius: 10px; padding: 15px; margin-bottom: 10px; border-left: 3px solid #555; transition: 0.3s; }
+        .bot-card.active { border-left-color: var(--green); }
+        .bot-head { display: flex; justify-content: space-between; margin-bottom: 10px; font-weight: 600; }
+        .inp-row { display: flex; gap: 8px; margin-bottom: 8px; }
+        input { width: 100%; background: #0b0e11; border: 1px solid #333; color: #fff; padding: 8px; border-radius: 4px; box-sizing: border-box; }
         
-        .bot-top { display: flex; justify-content: space-between; margin-bottom: 10px; }
-        .bot-sym { font-weight: 600; font-size: 15px; }
-        .bot-status { font-size: 10px; padding: 3px 8px; border-radius: 4px; background: rgba(255,255,255,0.05); }
-
-        .inp-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; }
-        .inp-group label { display: block; font-size: 9px; color: var(--text-sub); margin-bottom: 3px; }
-        .inp-group input { 
-            width: 100%; background: #0b0e11; border: 1px solid #333; 
-            color: #fff; padding: 8px; border-radius: 6px; box-sizing: border-box;
-        }
-        .inp-group input:focus { border-color: var(--gold); outline: none; }
+        /* HISTORY */
+        .hist-item { display: flex; justify-content: space-between; padding: 10px; border-bottom: 1px solid #222; font-size: 11px; }
+        .hist-type.BUY { color: var(--green); }
+        .hist-type.SELL { color: var(--gold); }
+        .hist-type.STOP { color: var(--red); }
 
         /* CONTROLS */
-        .bot-controls { display: flex; gap: 8px; margin-top: 10px; }
-        .btn { flex: 1; padding: 8px; border-radius: 6px; border: none; font-weight: 600; cursor: pointer; font-size: 11px; }
+        .controls { display: flex; gap: 5px; margin-top: 10px; }
+        .btn { flex: 1; padding: 8px; border-radius: 4px; border: none; cursor: pointer; font-weight: 600; font-size: 10px; }
         .btn-run { background: rgba(39, 174, 96, 0.2); color: var(--green); border: 1px solid var(--green); }
-        .btn-pause { background: rgba(255, 255, 255, 0.1); color: #ccc; }
-        .btn-del { flex: 0 0 30px; background: #1a0505; color: #ff4d4d; }
-
-        /* FAB & SYNC */
-        .main-actions {
-            position: fixed; bottom: 0; left: 0; width: 100%;
-            background: rgba(11, 14, 17, 0.95);
-            padding: 15px; box-sizing: border-box;
-            display: flex; gap: 10px;
-            backdrop-filter: blur(10px); border-top: var(--border);
-        }
-        .action-btn {
-            flex: 1; padding: 14px; border-radius: 8px; border: none;
-            font-weight: 600; cursor: pointer; font-size: 12px;
-            text-transform: uppercase;
-        }
-        .save-local { background: #1e232b; color: #fff; border: 1px solid #333; }
-        .deploy { background: var(--gold); color: #000; }
-
-        /* LIVE STATUS */
-        .live-dot { width: 8px; height: 8px; background: var(--green); border-radius: 50%; display: inline-block; animation: pulse 2s infinite; }
-        @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.5; } 100% { opacity: 1; } }
+        .btn-stop { background: rgba(255, 255, 255, 0.1); color: #ccc; }
+        
+        .main-btn { position: fixed; bottom: 20px; left: 15px; right: 15px; background: var(--gold); color: #000; padding: 14px; border-radius: 8px; text-align: center; font-weight: bold; text-transform: uppercase; cursor: pointer; box-shadow: 0 5px 20px rgba(212,175,55,0.3); }
 
         .hidden { display: none; }
     </style>
@@ -118,181 +55,137 @@
 <body>
 
     <div class="header">
-        <div class="brand">ONYX INVESTOR</div>
-        <select class="lang-select" id="lang" onchange="changeLang()">
-            <option value="en">🇺🇸 EN</option>
-            <option value="ru">🇷🇺 RU</option>
-            <option value="uz">🇺🇿 UZ</option>
-        </select>
-    </div>
-
-    <div class="balance-card">
-        <div class="refresh-icon" onclick="refreshBalance()">↻</div>
-        <div class="bal-title" id="t_bal">Total Balance (USDT)</div>
-        <div class="bal-value">$ <span id="real_bal">...</span></div>
+        <div class="brand"><div class="ai-pulse"></div> ONYX AI SYSTEM</div>
+        <div style="font-size: 10px; color: var(--sub);">V79</div>
     </div>
 
     <div class="tabs">
-        <div class="tab active" onclick="switchTab('bots')" id="t_bots">Strategies</div>
-        <div class="tab" onclick="switchTab('logs')" id="t_logs">Live Logs</div>
+        <div class="tab active" onclick="tab('wallet')">WALLET</div>
+        <div class="tab" onclick="tab('bots')">BOTS</div>
+        <div class="tab" onclick="tab('history')">HISTORY</div>
     </div>
 
-    <div id="tab-bots">
-        <div id="bots_list"></div>
-        <div style="text-align: center; margin-top: 15px; color: var(--gold); cursor: pointer;" onclick="addBot()">
-            + <span id="t_add">ADD NEW ASSET</span>
+    <div id="view-wallet">
+        <div id="wallet-list"></div>
+    </div>
+
+    <div id="view-bots" class="hidden">
+        <div id="bots-list"></div>
+        <div style="text-align: center; margin: 15px; color: var(--sub); font-size: 10px; cursor: pointer;" onclick="addBot()">+ ADD STRATEGY</div>
+    </div>
+
+    <div id="view-history" class="hidden">
+        <div style="background: var(--card); border-radius: 8px; padding: 10px;">
+            <div id="history-list"></div>
+        </div>
+        <div style="margin-top: 20px; padding: 15px; background: rgba(39, 174, 96, 0.1); border-radius: 8px; text-align: center;">
+            <div style="font-weight: bold; color: var(--green);">🧠 AI SCANNER ACTIVE</div>
+            <div style="font-size: 10px; color: var(--sub); margin-top: 5px;">Scanning BTC/ETH for entry points...</div>
         </div>
     </div>
 
-    <div id="tab-logs" class="hidden">
-        <div style="background: var(--card); padding: 15px; border-radius: 10px; font-family: monospace; font-size: 11px; color: var(--green);">
-            <div><span class="live-dot"></span> SYSTEM ONLINE</div>
-            <div style="margin-top: 10px; opacity: 0.7;">
-                [INFO] Connected to MEXC API<br>
-                [INFO] Expert Brain: Active<br>
-                [INFO] Waiting for market signals...
-            </div>
-            <br>
-            <div style="color: var(--text-sub)">To see full logs, check the VPS terminal.</div>
-        </div>
-    </div>
-
-    <div style="height: 80px;"></div> <div class="main-actions">
-        <button class="action-btn save-local" onclick="saveLocalOnly()" id="t_save">💾 Save Draft</button>
-        <button class="action-btn deploy" onclick="deployToServer()" id="t_deploy">🚀 Deploy & Start</button>
-    </div>
+    <div class="main-btn" onclick="sync()">✅ ACTIVATE SYSTEM</div>
 
     <script>
-        const tg = window.Telegram.WebApp;
-        tg.expand();
+        const tg = window.Telegram.WebApp; tg.expand();
 
-        // --- TRANSLATIONS ---
-        const txt = {
-            en: { bal: "Total Balance", bots: "Strategies", logs: "Live Logs", add: "ADD NEW ASSET", save: "Save Draft", deploy: "Deploy & Start", status: "Status", run: "RUN", stop: "PAUSE" },
-            ru: { bal: "Общий Баланс", bots: "Стратегии", logs: "Логи", add: "ДОБАВИТЬ ПАРУ", save: "Сохранить", deploy: "Запустить", status: "Статус", run: "СТАРТ", stop: "ПАУЗА" },
-            uz: { bal: "Umumiy Balans", bots: "Strategiyalar", logs: "Loglar", add: "YANGI AKTIV", save: "Saqlash", deploy: "Ishga tushirish", status: "Holat", run: "BOSHLASH", stop: "TO'XTATISH" }
-        };
-
-        // --- LOGIC ---
-        let currentLang = localStorage.getItem('lang') || 'en';
-        document.getElementById('lang').value = currentLang;
-
-        // Get Balance from URL
+        // 1. PARSE DATA FROM URL
         const urlParams = new URLSearchParams(window.location.search);
-        const bal = urlParams.get('bal');
-        if(bal) {
-            document.getElementById('real_bal').innerText = bal;
-            localStorage.setItem('cached_bal', bal);
-        } else {
-            document.getElementById('real_bal').innerText = localStorage.getItem('cached_bal') || '0.00';
-        }
+        
+        // Wallet Data: "BTC:0.5,USDT:100"
+        const rawWallet = urlParams.get('w') || "";
+        const walletData = rawWallet.split(',').filter(x=>x).map(x => {
+            const p = x.split(':'); return { sym: p[0], amt: p[1] };
+        });
 
-        let bots = JSON.parse(localStorage.getItem('onyx_bots')) || [];
+        // History Data: "BTC,BUY,0|ETH,SELL,1.2"
+        const rawHist = urlParams.get('h') || "";
+        const histData = rawHist.split('|').filter(x=>x).map(x => {
+            const p = x.split(','); return { sym: p[0], type: p[1], prof: p[2] };
+        });
 
-        function render() {
-            const list = document.getElementById('bots_list');
-            list.innerHTML = '';
-            const t = txt[currentLang];
-
-            bots.forEach((bot, i) => {
-                const el = document.createElement('div');
-                el.className = `bot-card ${bot.status ? 'running' : 'paused'}`;
-                el.innerHTML = `
-                    <div class="bot-top">
-                        <div class="bot-sym">${bot.symbol}</div>
-                        <div class="bot-status" style="color: ${bot.status ? '#27ae60' : '#888'}">
-                            ${bot.status ? '● ACTIVE' : '○ IDLE'}
-                        </div>
+        // 2. RENDER WALLET
+        const wList = document.getElementById('wallet-list');
+        if(walletData.length === 0) wList.innerHTML = '<div style="text-align:center; color:#555">Empty Wallet</div>';
+        else {
+            walletData.forEach(c => {
+                // Try to get icon from CDN
+                const icon = `https://cryptologos.cc/logos/${c.sym.toLowerCase().replace('usdt','tether')}-${c.sym.toLowerCase().replace('usdt','usdt')}-logo.png?v=025`;
+                wList.innerHTML += `
+                <div class="wallet-item">
+                    <div class="coin-info">
+                        <img src="${icon}" class="coin-img" onerror="this.src='https://via.placeholder.com/24'">
+                        <div class="coin-name">${c.sym}</div>
                     </div>
-                    <div class="inp-grid">
-                        <div class="inp-group"><label>PAIR</label><input type="text" value="${bot.symbol}" onchange="upd(${i}, 'symbol', this.value)"></div>
-                        <div class="inp-group"><label>USD</label><input type="number" value="${bot.amount}" onchange="upd(${i}, 'amount', this.value)"></div>
-                        <div class="inp-group"><label>DROP %</label><input type="number" value="${bot.drop}" onchange="upd(${i}, 'drop', this.value)"></div>
-                    </div>
-                    <div class="inp-grid" style="margin-top:5px;">
-                        <div class="inp-group"><label>TP %</label><input type="number" value="${bot.tp}" onchange="upd(${i}, 'tp', this.value)"></div>
-                        <div class="inp-group"><label>MAX $</label><input type="number" value="${bot.budget}" onchange="upd(${i}, 'budget', this.value)"></div>
-                        <div class="inp-group"><label>STATUS</label>
-                            <div style="font-size: 10px; color: #888; margin-top: 8px;">${bot.status ? 'Working' : 'Paused'}</div>
-                        </div>
-                    </div>
-                    <div class="bot-controls">
-                        <button class="btn btn-run" onclick="toggleStatus(${i}, true)">${t.run}</button>
-                        <button class="btn btn-pause" onclick="toggleStatus(${i}, false)">${t.stop}</button>
-                        <button class="btn btn-del" onclick="del(${i})">🗑</button>
-                    </div>
-                `;
-                list.appendChild(el);
+                    <div class="coin-amt">${c.amt}</div>
+                </div>`;
             });
-            applyLang();
         }
 
-        function upd(i, key, val) {
-            if(key === 'symbol') bots[i][key] = val.toUpperCase();
-            else bots[i][key] = parseFloat(val);
-            saveLocalOnly(true); // Silent save
+        // 3. RENDER HISTORY
+        const hList = document.getElementById('history-list');
+        if(histData.length === 0) hList.innerHTML = '<div style="text-align:center; color:#555">No recent trades</div>';
+        else {
+            histData.forEach(h => {
+                let color = '#fff';
+                if(h.type.includes('BUY')) color = 'var(--green)';
+                if(h.type.includes('SELL')) color = 'var(--gold)';
+                if(h.type.includes('STOP')) color = 'var(--red)';
+                
+                hList.innerHTML += `
+                <div class="hist-item">
+                    <div><b>${h.sym}</b></div>
+                    <div style="color:${color}">${h.type}</div>
+                    <div>${h.prof > 0 ? '+'+h.prof : h.prof} $</div>
+                </div>`;
+            });
         }
 
-        function toggleStatus(i, status) {
-            bots[i].status = status;
-            render();
-            saveLocalOnly(true);
+        // 4. BOTS LOGIC
+        let bots = JSON.parse(localStorage.getItem('onyx_bots_v79')) || [];
+        
+        function renderBots() {
+            const list = document.getElementById('bots-list'); list.innerHTML = '';
+            bots.forEach((b, i) => {
+                list.innerHTML += `
+                <div class="bot-card ${b.status?'active':''}">
+                    <div class="bot-head">
+                        <span>#${i+1} ${b.symbol}</span>
+                        <span style="font-size:10px; color:${b.status?'var(--green)':'#555'}">${b.status?'RUNNING':'STOPPED'}</span>
+                    </div>
+                    <div class="inp-row">
+                        <input type="text" value="${b.symbol}" onchange="upd(${i},'symbol',this.value)">
+                        <input type="number" value="${b.amount}" onchange="upd(${i},'amount',this.value)" placeholder="USD">
+                    </div>
+                    <div class="controls">
+                        <button class="btn btn-run" onclick="tog(${i},true)">START</button>
+                        <button class="btn btn-stop" onclick="tog(${i},false)">STOP</button>
+                        <button class="btn" style="background:#222;color:#888;flex:0 0 30px" onclick="del(${i})">x</button>
+                    </div>
+                </div>`;
+            });
         }
 
-        function addBot() {
-            bots.push({ id: 'B'+Date.now(), symbol: 'BTC/USDT', amount: 10, drop: 0.5, tp: 0.5, budget: 100, status: false });
-            render();
+        function upd(i, k, v) { bots[i][k] = (k==='symbol')?v.toUpperCase():parseFloat(v); save(); }
+        function tog(i, s) { bots[i].status = s; renderBots(); save(); }
+        function addBot() { bots.push({id:'B'+Date.now(), symbol:'BTC/USDT', amount:10, drop:0.5, tp:0.5, status:false}); renderBots(); save(); }
+        function del(i) { bots.splice(i,1); renderBots(); save(); }
+        function save() { localStorage.setItem('onyx_bots_v79', JSON.stringify(bots)); }
+        
+        function tab(t) {
+            ['wallet','bots','history'].forEach(x => document.getElementById('view-'+x).classList.add('hidden'));
+            document.getElementById('view-'+t).classList.remove('hidden');
+            document.querySelectorAll('.tab').forEach(e => e.classList.remove('active'));
+            event.target.classList.add('active');
         }
 
-        function del(i) {
-            if(confirm('Delete?')) { bots.splice(i, 1); render(); }
+        function sync() {
+            save();
+            tg.sendData(JSON.stringify({type:"SYNC", bots:bots}));
         }
 
-        function switchTab(tab) {
-            document.getElementById('tab-bots').classList.add('hidden');
-            document.getElementById('tab-logs').classList.add('hidden');
-            document.getElementById('tab-'+tab).classList.remove('hidden');
-            document.getElementById('t_bots').classList.remove('active');
-            document.getElementById('t_logs').classList.remove('active');
-            document.getElementById('t_'+tab).classList.add('active');
-        }
-
-        function changeLang() {
-            currentLang = document.getElementById('lang').value;
-            localStorage.setItem('lang', currentLang);
-            applyLang();
-            render();
-        }
-
-        function applyLang() {
-            const t = txt[currentLang];
-            document.getElementById('t_bal').innerText = t.bal;
-            document.getElementById('t_bots').innerText = t.bots;
-            document.getElementById('t_logs').innerText = t.logs;
-            document.getElementById('t_add').innerText = t.add;
-            document.getElementById('t_save').innerText = t.save;
-            document.getElementById('t_deploy').innerText = t.deploy;
-        }
-
-        // --- ACTIONS ---
-
-        function saveLocalOnly(silent = false) {
-            localStorage.setItem('onyx_bots', JSON.stringify(bots));
-            if(!silent && tg.HapticFeedback) tg.HapticFeedback.notificationOccurred('success');
-        }
-
-        function deployToServer() {
-            saveLocalOnly(true);
-            tg.sendData(JSON.stringify({ type: "SYNC", bots: bots }));
-        }
-
-        function refreshBalance() {
-            tg.sendData(JSON.stringify({ type: "REFRESH_BALANCE" }));
-        }
-
-        // Init
-        if(bots.length === 0) addBot();
-        render();
+        if(bots.length===0) addBot();
+        renderBots();
 
     </script>
 </body>
