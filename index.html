@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>Scalper Pro V84</title>
+    <title>Scalper Pro V85</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
@@ -50,19 +50,15 @@
         .status-on { background: rgba(0, 200, 83, 0.1); color: var(--green); }
         .status-off { background: rgba(138, 148, 166, 0.1); color: var(--text-dim); }
         
-        /* BOT STATS (MOCKUP FOR NOW UNTIL SYNCED) */
         .bot-stats-row { display: flex; justify-content: space-between; background: #0B0D0F; padding: 10px; border-radius: 8px; font-size: 11px; color: var(--text-dim); border: 1px solid #1A1D21; }
         .stat-item span { color: #fff; font-weight: 600; display: block; margin-top: 3px; }
 
         /* BOT CONTROLS */
-        .bot-actions { display: flex; gap: 8px; flex-wrap: wrap; }
-        .btn-action { flex: 1; min-width: 30%; padding: 10px; border-radius: 8px; border: none; font-weight: 600; font-size: 12px; cursor: pointer; transition: 0.2s; }
+        .bot-actions { display: flex; gap: 8px; }
+        .btn-action { flex: 1; padding: 10px; border-radius: 8px; border: none; font-weight: 600; font-size: 12px; cursor: pointer; transition: 0.2s; }
         .btn-toggle-on { background: var(--primary); color: #fff; }
         .btn-toggle-off { background: rgba(255,255,255,0.05); color: var(--text); }
         .btn-edit { background: rgba(255,255,255,0.05); color: var(--text); flex: 0 0 auto; padding: 10px 16px; }
-        
-        .btn-be { background: rgba(255, 193, 7, 0.1); color: var(--yellow); border: 1px solid var(--yellow); }
-        .btn-panic { background: rgba(255, 61, 0, 0.1); color: var(--red); border: 1px solid var(--red); }
 
         /* MODAL */
         .modal-overlay {
@@ -88,13 +84,20 @@
         .form-section { background: var(--card); padding: 16px; border-radius: 12px; border: var(--border); margin-bottom: 16px; }
         .form-section-title { font-size: 12px; font-weight: 600; color: var(--primary); text-transform: uppercase; margin-bottom: 12px; }
         .input-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
-        .input-group { display: flex; flex-direction: column; gap: 6px; }
+        .input-group { display: flex; flex-direction: column; gap: 6px; margin-bottom: 12px;}
         .input-group label { font-size: 11px; color: var(--text-dim); font-weight: 500; }
-        .input-group input { background: #0F1215; border: 1px solid #2A2F35; color: #fff; padding: 12px; border-radius: 8px; font-size: 14px; outline: none; }
-        .input-group input:focus { border-color: var(--primary); }
+        .input-group input, .input-group select { 
+            background: #0F1215; border: 1px solid #2A2F35; color: #fff; 
+            padding: 12px; border-radius: 8px; font-size: 14px; outline: none; font-family: 'Inter', sans-serif;
+        }
+        .input-group input:focus, .input-group select:focus { border-color: var(--primary); }
 
-        .checkbox-group { display: flex; justify-content: space-between; align-items: center; padding: 8px 0; }
+        .danger-zone { border-color: rgba(255, 61, 0, 0.3); }
+        .danger-title { color: var(--red); }
         
+        .btn-be { background: rgba(255, 193, 7, 0.1); color: var(--yellow); border: 1px solid var(--yellow); width: 100%; margin-bottom: 8px; padding: 12px; border-radius: 8px; font-weight: 600;}
+        .btn-panic { background: rgba(255, 61, 0, 0.1); color: var(--red); border: 1px solid var(--red); width: 100%; padding: 12px; border-radius: 8px; font-weight: 600;}
+
         .main-btn {
             position: fixed; bottom: 20px; left: 15px; right: 15px;
             background: var(--primary); color: #fff; border: none;
@@ -106,7 +109,7 @@
 <body>
 
     <div class="header">
-        <div class="logo">SCALPER <span>V84</span></div>
+        <div class="logo">SCALPER <span>V85</span></div>
     </div>
 
     <div class="balance-box">
@@ -137,7 +140,7 @@
             
             <div class="form-section">
                 <div class="form-section-title">General</div>
-                <div class="input-group" style="margin-bottom: 12px;">
+                <div class="input-group">
                     <label>Trading Pair</label>
                     <input type="text" id="m_symbol" placeholder="BTC/USDT">
                 </div>
@@ -147,17 +150,24 @@
                 </div>
             </div>
 
-            <div class="form-section" style="border-color: rgba(41, 98, 255, 0.3);">
-                <div class="form-section-title">Price Range Limits (Optional)</div>
+            <div class="form-section">
+                <div class="form-section-title">Price Range Limits</div>
                 <div class="input-grid">
                     <div class="input-group"><label>Min Price ($)</label><input type="number" id="m_min_p" placeholder="0 = Off"></div>
                     <div class="input-group"><label>Max Price ($)</label><input type="number" id="m_max_p" placeholder="0 = Off"></div>
                 </div>
-                <div style="font-size: 10px; color: var(--text-dim); margin-top: 8px;">Bot will only BUY if the price is between Min and Max.</div>
             </div>
 
             <div class="form-section">
-                <div class="form-section-title">Averaging (DCA)</div>
+                <div class="form-section-title">Averaging Strategy (DCA)</div>
+                <div class="input-group">
+                    <label>Averaging Base (Расчет от)</label>
+                    <select id="m_dca_mode">
+                        <option value="AVERAGE">Average Price (Средняя цена)</option>
+                        <option value="LAST_BUY">Last Buy Price (Последняя покупка)</option>
+                        <option value="LAST_HIGH">Last High / Peak (Следящий пик)</option>
+                    </select>
+                </div>
                 <div class="input-grid">
                     <div class="input-group"><label>Price Drop (%)</label><input type="number" id="m_drop" placeholder="0.5"></div>
                     <div class="input-group"><label>DCA Multiplier (x)</label><input type="number" id="m_dca" placeholder="1.5"></div>
@@ -172,8 +182,14 @@
                 </div>
             </div>
 
+            <div class="form-section danger-zone">
+                <div class="form-section-title danger-title">Emergency Actions</div>
+                <button class="btn-be" onclick="sendEmergency('BREAK_EVEN')">⚖️ PLACE BREAK-EVEN ORDER</button>
+                <button class="btn-panic" onclick="sendEmergency('PANIC_SELL')">🚨 PANIC SELL TO MARKET</button>
+                <div style="font-size: 10px; color: var(--text-dim); text-align: center; margin-top: 5px;">These actions execute immediately and close this window.</div>
+            </div>
+
             <button class="btn-action btn-toggle-on" style="width: 100%; margin-top: 10px;" onclick="saveModal()">APPLY SETTINGS</button>
-            <button class="btn-action" style="background: #2A1111; color: var(--red); width: 100%; margin-top: 10px;" onclick="delBotFromModal()">DELETE BOT</button>
             <div style="height: 50px;"></div>
         </div>
     </div>
@@ -188,10 +204,10 @@
         const defaultBot = () => ({
             id: 'B'+Date.now(), symbol: 'BTC/USDT', 
             amount: 10, dca_mult: 1.5, drop: 0.5, tp: 0.5, sl: 0, budget: 100, 
-            min_price: 0, max_price: 0, status: false
+            min_price: 0, max_price: 0, dca_mode: "AVERAGE", status: false
         });
 
-        let bots = JSON.parse(localStorage.getItem('scalper_v84')) || [];
+        let bots = JSON.parse(localStorage.getItem('scalper_v85')) || [];
         if(bots.length === 0) bots.push(defaultBot());
 
         function render() {
@@ -206,7 +222,7 @@
                     </div>
                     
                     <div class="bot-stats-row">
-                        <div class="stat-item">Base: <span>$${b.amount}</span></div>
+                        <div class="stat-item">Mode: <span>${b.dca_mode === 'LAST_HIGH' ? 'Trailing' : b.dca_mode}</span></div>
                         <div class="stat-item">Range: <span>${b.min_price>0?b.min_price:0} - ${b.max_price>0?b.max_price:'∞'}</span></div>
                         <div class="stat-item">Max: <span>$${b.budget}</span></div>
                     </div>
@@ -215,12 +231,7 @@
                         <button class="btn-action ${b.status?'btn-toggle-on':'btn-toggle-off'}" onclick="toggleStatus(${i})">
                             ${b.status ? '⏹ STOP' : '▶ START'}
                         </button>
-                        <button class="btn-edit" onclick="openModal(${i})">⚙️</button>
-                    </div>
-                    
-                    <div class="bot-actions">
-                        <button class="btn-action btn-be" onclick="sendAction('BREAK_EVEN', '${b.id}')">⚖️ BREAK-EVEN</button>
-                        <button class="btn-action btn-panic" onclick="sendAction('PANIC_SELL', '${b.id}')">🚨 PANIC SELL</button>
+                        <button class="btn-edit" onclick="openModal(${i})">⚙️ SETTINGS</button>
                     </div>
                 </div>`;
             });
@@ -241,6 +252,7 @@
             document.getElementById('m_sl').value = b.sl;
             document.getElementById('m_min_p').value = b.min_price || 0;
             document.getElementById('m_max_p').value = b.max_price || 0;
+            document.getElementById('m_dca_mode').value = b.dca_mode || "AVERAGE";
 
             document.getElementById('modalOverlay').classList.add('open');
         }
@@ -258,16 +270,12 @@
             bots[i].sl = parseFloat(document.getElementById('m_sl').value) || 0;
             bots[i].min_price = parseFloat(document.getElementById('m_min_p').value) || 0;
             bots[i].max_price = parseFloat(document.getElementById('m_max_p').value) || 0;
+            bots[i].dca_mode = document.getElementById('m_dca_mode').value;
 
             saveLocal(); render(); closeModal();
         }
 
-        function delBotFromModal() {
-            const i = document.getElementById('edit_idx').value;
-            if(confirm('Delete this bot?')) { bots.splice(i, 1); saveLocal(); render(); closeModal(); }
-        }
-
-        function saveLocal() { localStorage.setItem('scalper_v84', JSON.stringify(bots)); }
+        function saveLocal() { localStorage.setItem('scalper_v85', JSON.stringify(bots)); }
         
         function deploy() {
             saveLocal();
@@ -275,8 +283,11 @@
             tg.sendData(JSON.stringify({type: "SYNC", bots: bots}));
         }
 
-        // Send Emergency Commands directly to Python
-        function sendAction(actionType, botId) {
+        // EMERGENCY COMMANDS (From Modal directly to Python)
+        function sendEmergency(actionType) {
+            const i = document.getElementById('edit_idx').value;
+            const botId = bots[i].id;
+            
             let msg = actionType === 'PANIC_SELL' 
                 ? "SELL ALL TO MARKET NOW?" 
                 : "Cancel active orders and place a LIMIT SELL at your average entry price?";
@@ -284,6 +295,7 @@
             if(confirm(msg)) {
                 if(tg.HapticFeedback) tg.HapticFeedback.notificationOccurred('warning');
                 tg.sendData(JSON.stringify({type: actionType, bot_id: botId}));
+                closeModal(); // Close modal after action
             }
         }
 
