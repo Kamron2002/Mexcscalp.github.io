@@ -34,27 +34,28 @@
 
         .actions { display: flex; gap: 10px; }
         .btn { flex: 1; padding: 12px; border-radius: 10px; border: none; font-weight: 700; font-size: 13px; cursor: pointer; }
-        .btn-run { background: var(--accent); color: #fff; }
+        .btn-run { background: var(--accent); color: #000; }
         .btn-stop { background: #1E232B; color: var(--text); }
         .btn-edit { background: rgba(255,255,255,0.05); color: var(--text); flex: 0 0 50px; }
 
         .modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); backdrop-filter: blur(8px); z-index: 100; display: none; align-items: flex-end; }
-        .modal.open { display: flex; }
+        .modal.open { display: flex; animation: fade 0.3s forwards; }
+        @keyframes fade { from {opacity:0} to {opacity:1} }
         .modal-content { background: var(--card); width: 100%; max-height: 85vh; overflow-y: auto; border-radius: 24px 24px 0 0; padding: 25px; border-top: 1px solid #2A2F35; }
         .modal-title { font-size: 20px; font-weight: 700; margin-bottom: 25px; display: flex; justify-content: space-between; }
         
         .section { background: #0A0C10; padding: 18px; border-radius: 14px; border: var(--border); margin-bottom: 15px; }
-        .sec-title { font-size: 12px; font-weight: 700; color: var(--sub); margin-bottom: 15px; text-transform: uppercase; }
+        .sec-title { font-size: 12px; font-weight: 700; color: var(--sub); margin-bottom: 15px; text-transform: uppercase; letter-spacing: 1px; }
         .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
         .inp-grp { display: flex; flex-direction: column; gap: 8px; margin-bottom: 15px; }
         .inp-grp label { font-size: 12px; color: var(--sub); font-weight: 600; }
-        .inp-grp input, .inp-grp select { background: #161A21; border: 1px solid #2A2F35; color: #fff; padding: 14px; border-radius: 10px; font-size: 15px; outline: none; }
+        .inp-grp input, .inp-grp select { background: #161A21; border: 1px solid #2A2F35; color: #fff; padding: 14px; border-radius: 10px; font-size: 15px; font-family: inherit; outline: none; }
         .inp-grp input:focus, .inp-grp select:focus { border-color: var(--accent); }
         
         .btn-danger { background: rgba(255,23,68,0.1); color: var(--red); border: 1px solid rgba(255,23,68,0.3); width: 100%; padding: 14px; border-radius: 10px; font-weight: 700; margin-bottom: 10px; }
         .btn-warn { background: rgba(255,214,0,0.1); color: var(--yellow); border: 1px solid rgba(255,214,0,0.3); width: 100%; padding: 14px; border-radius: 10px; font-weight: 700; margin-bottom: 10px; }
 
-        .main-btn { position: fixed; bottom: 20px; left: 15px; right: 15px; background: var(--accent); color: #fff; border: none; padding: 18px; border-radius: 14px; font-weight: 700; font-size: 16px; cursor: pointer; }
+        .main-btn { position: fixed; bottom: 20px; left: 15px; right: 15px; background: var(--accent); color: #000; border: none; padding: 18px; border-radius: 14px; font-weight: 700; font-size: 16px; cursor: pointer; box-shadow: 0 10px 25px rgba(157,78,221,0.2); text-transform: uppercase; letter-spacing: 1px; z-index: 50; }
     </style>
 </head>
 <body>
@@ -63,14 +64,14 @@
     
     <div class="bal-card">
         <div>
-            <div style="color:var(--sub);font-size:12px;font-weight:600;">FREE USDT</div>
+            <div style="color:var(--sub);font-size:12px;font-weight:600;letter-spacing:1px">USDT BALANCE</div>
             <div class="bal-val">$ <span id="main_bal">0.00</span></div>
         </div>
         <button class="btn-refresh" onclick="tg.sendData(JSON.stringify({type:'REFRESH'}))">↻</button>
     </div>
 
     <div id="bots_list"></div>
-    <div style="text-align:center; margin-top:20px; margin-bottom:40px;"><button class="btn" style="background:transparent; border:2px dashed #2A2F35; color:var(--sub); width:100%; padding:15px;" onclick="addBot()">+ ADD BOT</button></div>
+    <div style="text-align:center; margin-top:20px; margin-bottom:40px;"><button class="btn" style="background:transparent; border:2px dashed #2A2F35; color:var(--sub); width:100%; padding:15px; font-size:14px;" onclick="addBot()">+ DEPLOY NEW BOT</button></div>
     
     <button class="main-btn" onclick="deploy()">🚀 SYNC ENGINE</button>
 
@@ -96,8 +97,8 @@
                 </div>
             </div>
 
-            <div class="section">
-                <div class="sec-title">Smart DCA Logic</div>
+            <div class="section" style="border-color: rgba(157,78,221,0.3);">
+                <div class="sec-title" style="color:var(--accent)">Smart DCA Logic</div>
                 <div class="inp-grp">
                     <label>Averaging Base</label>
                     <select id="m_mode">
@@ -112,8 +113,8 @@
                 </div>
             </div>
 
-            <div class="section" style="border-color: rgba(157,78,221,0.3);">
-                <div class="sec-title" style="color:var(--accent)">Smart Targets</div>
+            <div class="section">
+                <div class="sec-title">Smart Targets</div>
                 <div class="grid">
                     <div class="inp-grp"><label>Take Profit Base (%)</label><input type="number" id="m_tp"></div>
                     <div class="inp-grp"><label>Trailing Dev. (%)</label><input type="number" id="m_trail" placeholder="0 = Limit TP"></div>
@@ -127,7 +128,7 @@
                 <button class="btn-danger" onclick="sendAction('PANIC_SELL')">🚨 PANIC MARKET SELL</button>
             </div>
 
-            <button class="btn btn-run" style="width:100%; padding:16px; margin-top:10px" onclick="saveModal()">APPLY CONFIGURATION</button>
+            <button class="btn btn-run" style="width:100%; padding:16px; font-size:15px; margin-top:10px" onclick="saveModal()">APPLY CONFIGURATION</button>
             <div style="height:50px"></div>
         </div>
     </div>
@@ -166,45 +167,72 @@
         }
 
         function tog(i){ bots[i].status = !bots[i].status; sv(); rndr(); }
-        function addBot(){ bots.push({id:'B'+Date.now(), symbol:'ETH/USDT', amount:10, dca_mult:1.5, drop:0.5, tp:0.5, sl:0, budget:100, min_price:0, max_price:0, dca_mode:"LAST_DEAL", trailing_dev:0, status:false}); sv(); rndr(); opn(bots.length-1); }
+        
+        function addBot(){ 
+            bots.push({
+                id:'B'+Date.now(), symbol:'ETH/USDT', amount:10, dca_mult:1.5, drop:0.5, tp:0.5, sl:0, budget:100, min_price:0, max_price:0, dca_mode:"LAST_DEAL", trailing_dev:0, status:false
+            }); 
+            sv(); rndr(); opn(bots.length-1); 
+        }
         
         function opn(i) {
-            const b = bots[i]; document.getElementById('e_idx').value = i; document.getElementById('m_title').innerText = b.symbol;
-            document.getElementById('m_sym').value = b.symbol; document.getElementById('m_amt').value = b.amount;
-            document.getElementById('m_bud').value = b.budget; document.getElementById('m_min').value = b.min_price||0;
-            document.getElementById('m_max').value = b.max_price||0; document.getElementById('m_drop').value = b.drop; 
-            document.getElementById('m_mode').value = b.dca_mode||"LAST_DEAL"; document.getElementById('m_dca').value = b.dca_mult; 
-            document.getElementById('m_tp').value = b.tp; document.getElementById('m_sl').value = b.sl||0;
-            document.getElementById('m_trail').value = b.trailing_dev||0;
+            const b = bots[i]; 
+            document.getElementById('e_idx').value = i; 
+            document.getElementById('m_title').innerText = b.symbol;
+            document.getElementById('m_sym').value = b.symbol; 
+            
+            // ИСПРАВЛЕННЫЕ ПРИВЯЗКИ ID
+            document.getElementById('m_amt').value = b.amount;
+            document.getElementById('m_bud').value = b.budget; 
+            document.getElementById('m_min').value = b.min_price || 0;
+            document.getElementById('m_max').value = b.max_price || 0; 
+            document.getElementById('m_drop').value = b.drop; 
+            document.getElementById('m_mode').value = b.dca_mode || "LAST_DEAL"; 
+            document.getElementById('m_dca').value = b.dca_mult; 
+            document.getElementById('m_tp').value = b.tp; 
+            document.getElementById('m_sl').value = b.sl || 0;
+            document.getElementById('m_trail').value = b.trailing_dev || 0;
+            
             document.getElementById('modal').classList.add('open');
         }
         
         function saveModal() {
             const i = document.getElementById('e_idx').value;
             bots[i].symbol = document.getElementById('m_sym').value.toUpperCase();
-            bots[i].amount = parseFloat(document.getElementById('m_amount').value)||10;
-            bots[i].budget = parseFloat(document.getElementById('m_bud').value)||0;
-            bots[i].min_price = parseFloat(document.getElementById('m_min').value)||0;
-            bots[i].max_price = parseFloat(document.getElementById('m_max').value)||0;
+            
+            // ИСПРАВЛЕННЫЕ ПРИВЯЗКИ ID ПРИ СОХРАНЕНИИ
+            bots[i].amount = parseFloat(document.getElementById('m_amt').value) || 10;
+            bots[i].budget = parseFloat(document.getElementById('m_bud').value) || 0;
+            bots[i].min_price = parseFloat(document.getElementById('m_min').value) || 0;
+            bots[i].max_price = parseFloat(document.getElementById('m_max').value) || 0;
             bots[i].dca_mode = document.getElementById('m_mode').value;
-            bots[i].drop = parseFloat(document.getElementById('m_drop').value)||0.5;
-            bots[i].dca_mult = parseFloat(document.getElementById('m_dca').value)||1.5;
-            bots[i].tp = parseFloat(document.getElementById('m_tp').value)||0.5;
-            bots[i].sl = parseFloat(document.getElementById('m_sl').value)||0;
-            bots[i].trailing_dev = parseFloat(document.getElementById('m_trail').value)||0;
+            bots[i].drop = parseFloat(document.getElementById('m_drop').value) || 0.5;
+            bots[i].dca_mult = parseFloat(document.getElementById('m_dca').value) || 1.5;
+            bots[i].tp = parseFloat(document.getElementById('m_tp').value) || 0.5;
+            bots[i].sl = parseFloat(document.getElementById('m_sl').value) || 0;
+            bots[i].trailing_dev = parseFloat(document.getElementById('m_trail').value) || 0;
+            
             sv(); rndr(); document.getElementById('modal').classList.remove('open');
         }
 
         function sv(){ localStorage.setItem('v91', JSON.stringify(bots)); }
-        function deploy(){ sv(); tg.HapticFeedback.notificationOccurred('success'); tg.sendData(JSON.stringify({type: "SYNC", bots: bots})); }
+        
+        function deploy(){ 
+            sv(); 
+            if(tg.HapticFeedback) tg.HapticFeedback.notificationOccurred('success'); 
+            tg.sendData(JSON.stringify({type: "SYNC", bots: bots})); 
+        }
         
         function sendAction(type) {
             const i = document.getElementById('e_idx').value;
-            if(confirm(type==='PANIC_SELL'?'Liquidate everything at Market Price?':'Cancel old orders and place Break-Even?')){
+            let msg = type === 'PANIC_SELL' ? 'SELL ALL TO MARKET NOW?' : 'Cancel active orders and place a LIMIT SELL at your average entry price?';
+            if(confirm(msg)){
+                if(tg.HapticFeedback) tg.HapticFeedback.notificationOccurred('warning');
                 tg.sendData(JSON.stringify({type: type, bot_id: bots[i].id}));
                 document.getElementById('modal').classList.remove('open');
             }
         }
+        
         rndr();
     </script>
 </body>
