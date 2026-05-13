@@ -3,112 +3,136 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>True Grid V86</title>
+    <title>Titan Core V87</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
-        :root { --bg:#0F1215; --card:#181C20; --primary:#2962FF; --green:#00C853; --red:#FF3D00; --yellow:#FFC107; --text:#FFF; --dim:#8A94A6; --border:1px solid #2A2F35; }
-        body { background:var(--bg); color:var(--text); font-family:'Inter',sans-serif; margin:0; padding:15px; padding-bottom:90px; }
+        @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;600;700&display=swap');
         
-        .header { display:flex; justify-content:space-between; align-items:center; margin-bottom:20px; }
-        .logo { font-size:18px; font-weight:700; } .logo span { color:var(--primary); }
-        
-        .balance-box { background:linear-gradient(135deg, #181C20 0%, #0F1215 100%); border:var(--border); border-radius:16px; padding:20px; display:flex; justify-content:space-between; align-items:center; margin-bottom:20px; box-shadow:0 8px 24px rgba(0,0,0,0.2); }
-        .bal-value { font-size:28px; font-weight:700; }
-        .btn-refresh { background:rgba(255,255,255,0.05); border:none; color:var(--text); padding:8px 12px; border-radius:8px; cursor:pointer; }
+        :root {
+            --bg: #07090C; --card: #111419; --accent: #00E676; --red: #FF1744; --yellow: #FFD600;
+            --text: #FFFFFF; --sub: #6C7A8C; --border: 1px solid #1E232B;
+        }
 
-        .bot-card { background:var(--card); border:var(--border); border-radius:12px; padding:16px; margin-bottom:15px; display:flex; flex-direction:column; gap:12px; }
-        .bot-top { display:flex; justify-content:space-between; align-items:center; }
-        .bot-sym { font-size:16px; font-weight:700; }
-        .badge { padding:4px 8px; border-radius:6px; font-size:11px; font-weight:600; }
-        .on { background:rgba(0,200,83,0.1); color:var(--green); } .off { background:rgba(138,148,166,0.1); color:var(--dim); }
+        body { background: var(--bg); color: var(--text); font-family: 'Space Grotesk', sans-serif; margin: 0; padding: 15px; padding-bottom: 100px; }
         
-        .bot-stats { display:flex; justify-content:space-between; background:#0B0D0F; padding:10px; border-radius:8px; font-size:11px; color:var(--dim); border:1px solid #1A1D21; }
-        .bot-stats span { color:#fff; font-weight:600; display:block; margin-top:3px; }
-
-        .actions { display:flex; gap:8px; }
-        .btn { flex:1; padding:10px; border-radius:8px; border:none; font-weight:600; font-size:12px; cursor:pointer; }
-        .btn-run { background:var(--primary); color:#fff; } .btn-stop { background:rgba(255,255,255,0.05); color:var(--text); }
-        .btn-edit { background:rgba(255,255,255,0.05); color:var(--text); flex:0 0 auto; padding:10px 16px; }
-
-        .modal { position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.8); z-index:100; display:none; justify-content:center; align-items:flex-end; }
-        .modal.open { display:flex; }
-        .modal-content { background:var(--bg); width:100%; max-height:90vh; overflow-y:auto; border-radius:20px 20px 0 0; padding:24px; box-sizing:border-box; border-top:var(--border); }
-        .modal-title { font-size:18px; font-weight:700; margin-bottom:20px; display:flex; justify-content:space-between; }
+        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px; }
+        .logo { font-size: 22px; font-weight: 700; letter-spacing: 1px; }
+        .logo span { color: var(--accent); }
         
-        .section { background:var(--card); padding:16px; border-radius:12px; border:var(--border); margin-bottom:16px; }
-        .sec-title { font-size:12px; font-weight:600; color:var(--primary); margin-bottom:12px; text-transform:uppercase; }
-        .grid { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
-        .inp-grp { display:flex; flex-direction:column; gap:6px; margin-bottom:12px; }
-        .inp-grp label { font-size:11px; color:var(--dim); font-weight:500; }
-        .inp-grp input, .inp-grp select { background:#0F1215; border:1px solid #2A2F35; color:#fff; padding:12px; border-radius:8px; font-size:14px; outline:none; }
-        
-        .btn-be { background:rgba(255,193,7,0.1); color:var(--yellow); border:1px solid var(--yellow); width:100%; margin-bottom:8px; padding:12px; border-radius:8px; font-weight:600;}
-        .btn-panic { background:rgba(255,61,0,0.1); color:var(--red); border:1px solid var(--red); width:100%; padding:12px; border-radius:8px; font-weight:600;}
+        .bal-card { background: linear-gradient(145deg, #161A21 0%, #0D1014 100%); border: var(--border); border-radius: 16px; padding: 25px; display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px; box-shadow: 0 10px 30px rgba(0,230,118,0.05); border-left: 4px solid var(--accent); }
+        .bal-val { font-size: 32px; font-weight: 700; margin-top: 5px; }
+        .btn-refresh { background: rgba(255,255,255,0.05); border: none; color: var(--text); padding: 10px 15px; border-radius: 10px; cursor: pointer; font-size: 16px; }
 
-        .main-btn { position:fixed; bottom:20px; left:15px; right:15px; background:var(--primary); color:#fff; border:none; padding:16px; border-radius:12px; font-weight:600; font-size:15px; cursor:pointer; }
+        .bot-card { background: var(--card); border: var(--border); border-radius: 16px; padding: 20px; margin-bottom: 15px; transition: 0.3s; position: relative; overflow: hidden; }
+        .bot-card.on { border-color: rgba(0, 230, 118, 0.4); box-shadow: 0 0 20px rgba(0,230,118,0.05); }
+        .bot-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
+        .bot-sym { font-size: 18px; font-weight: 700; }
+        
+        .badge { padding: 5px 10px; border-radius: 8px; font-size: 12px; font-weight: 600; text-transform: uppercase; }
+        .on .badge { background: rgba(0,230,118,0.1); color: var(--accent); }
+        .bot-card:not(.on) .badge { background: rgba(108,122,140,0.1); color: var(--sub); }
+        
+        .stats-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 15px; background: #0A0C10; padding: 12px; border-radius: 12px; border: var(--border); }
+        .stat-item { font-size: 11px; color: var(--sub); display: flex; flex-direction: column; gap: 4px; }
+        .stat-item span { color: #fff; font-size: 13px; font-weight: 600; }
+
+        .actions { display: flex; gap: 10px; }
+        .btn { flex: 1; padding: 12px; border-radius: 10px; border: none; font-weight: 700; font-size: 13px; cursor: pointer; font-family: inherit; }
+        .btn-run { background: var(--accent); color: #000; }
+        .btn-stop { background: #1E232B; color: var(--text); }
+        .btn-edit { background: rgba(255,255,255,0.05); color: var(--text); flex: 0 0 50px; }
+
+        /* MODAL */
+        .modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); backdrop-filter: blur(8px); z-index: 100; display: none; align-items: flex-end; }
+        .modal.open { display: flex; animation: fade 0.3s forwards; }
+        @keyframes fade { from {opacity:0} to {opacity:1} }
+        .modal-content { background: var(--card); width: 100%; max-height: 85vh; overflow-y: auto; border-radius: 24px 24px 0 0; padding: 25px; border-top: 1px solid #2A2F35; }
+        .modal-title { font-size: 20px; font-weight: 700; margin-bottom: 25px; display: flex; justify-content: space-between; }
+        
+        .section { background: #0A0C10; padding: 18px; border-radius: 14px; border: var(--border); margin-bottom: 15px; }
+        .sec-title { font-size: 12px; font-weight: 700; color: var(--sub); margin-bottom: 15px; text-transform: uppercase; letter-spacing: 1px; }
+        .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
+        .inp-grp { display: flex; flex-direction: column; gap: 8px; margin-bottom: 15px; }
+        .inp-grp label { font-size: 12px; color: var(--sub); font-weight: 600; }
+        .inp-grp input, .inp-grp select { background: #161A21; border: 1px solid #2A2F35; color: #fff; padding: 14px; border-radius: 10px; font-size: 15px; font-family: inherit; outline: none; }
+        .inp-grp input:focus, .inp-grp select:focus { border-color: var(--accent); }
+        
+        .btn-danger { background: rgba(255,23,68,0.1); color: var(--red); border: 1px solid rgba(255,23,68,0.3); width: 100%; padding: 14px; border-radius: 10px; font-weight: 700; margin-bottom: 10px; }
+        .btn-warn { background: rgba(255,214,0,0.1); color: var(--yellow); border: 1px solid rgba(255,214,0,0.3); width: 100%; padding: 14px; border-radius: 10px; font-weight: 700; margin-bottom: 10px; }
+
+        .main-btn { position: fixed; bottom: 20px; left: 15px; right: 15px; background: var(--accent); color: #000; border: none; padding: 18px; border-radius: 14px; font-weight: 700; font-size: 16px; cursor: pointer; box-shadow: 0 10px 25px rgba(0,230,118,0.2); text-transform: uppercase; letter-spacing: 1px; z-index: 50; }
     </style>
 </head>
 <body>
 
-    <div class="header"><div class="logo">TRUE <span>GRID</span></div></div>
-    <div class="balance-box">
-        <div><div style="color:var(--dim);font-size:12px">TOTAL USDT</div><div class="bal-value">$ <span id="main_bal">0.00</span></div></div>
+    <div class="header"><div class="logo">TITAN <span>CORE</span></div></div>
+    
+    <div class="bal-card">
+        <div>
+            <div style="color:var(--sub);font-size:12px;font-weight:600;letter-spacing:1px">USDT BALANCE</div>
+            <div class="bal-val">$ <span id="main_bal">0.00</span></div>
+        </div>
         <button class="btn-refresh" onclick="tg.sendData(JSON.stringify({type:'REFRESH'}))">↻</button>
     </div>
 
     <div id="bots_list"></div>
-    <div style="text-align:center; margin-bottom:40px;"><button class="btn" style="background:transparent; border:1px dashed #2A2F35; color:var(--primary); width:100%" onclick="addBot()">+ ADD BOT</button></div>
-    <button class="main-btn" onclick="deploy()">🚀 SAVE & DEPLOY</button>
+    <div style="text-align:center; margin-top:20px; margin-bottom:40px;"><button class="btn" style="background:transparent; border:2px dashed #2A2F35; color:var(--sub); width:100%; padding:15px; font-size:14px;" onclick="addBot()">+ DEPLOY NEW BOT</button></div>
+    
+    <button class="main-btn" onclick="deploy()">🚀 SYNC ALL TO CLOUD</button>
 
     <div class="modal" id="modal">
         <div class="modal-content">
-            <div class="modal-title"><span id="m_title">Bot</span><span onclick="document.getElementById('modal').classList.remove('open')">×</span></div>
+            <div class="modal-title"><span id="m_title">Bot Settings</span><span style="color:var(--sub);cursor:pointer" onclick="document.getElementById('modal').classList.remove('open')">✕</span></div>
             <input type="hidden" id="e_idx">
             
             <div class="section">
-                <div class="sec-title">General</div>
-                <div class="inp-grp"><label>Pair</label><input type="text" id="m_sym"></div>
+                <div class="sec-title">Core Setup</div>
+                <div class="inp-grp"><label>Symbol Pair</label><input type="text" id="m_sym"></div>
                 <div class="grid">
                     <div class="inp-grp"><label>Base Order ($)</label><input type="number" id="m_amt"></div>
                     <div class="inp-grp"><label>Max Budget ($)</label><input type="number" id="m_bud"></div>
                 </div>
             </div>
-            
-            <div class="section" style="border-color: rgba(41,98,255,0.3);">
-                <div class="sec-title">Price Range</div>
+
+            <div class="section">
+                <div class="sec-title">Trading Range</div>
                 <div class="grid">
-                    <div class="inp-grp"><label>Min Price ($)</label><input type="number" id="m_min"></div>
-                    <div class="inp-grp"><label>Max Price ($)</label><input type="number" id="m_max"></div>
+                    <div class="inp-grp"><label>Min Price</label><input type="number" id="m_min"></div>
+                    <div class="inp-grp"><label>Max Price</label><input type="number" id="m_max"></div>
                 </div>
             </div>
 
-            <div class="section">
-                <div class="sec-title">Grid Settings</div>
+            <div class="section" style="border: 1px solid rgba(0,230,118,0.3);">
+                <div class="sec-title" style="color:var(--accent)">Grid DCA Logic</div>
                 <div class="inp-grp">
-                    <label>Averaging Base</label>
-                    <select id="m_mode"><option value="AVERAGE">Average Price</option><option value="LAST_BUY">Last Buy Price</option></select>
+                    <label>Base Calculation Mode</label>
+                    <select id="m_mode">
+                        <option value="LAST_DEAL">LAST DEAL (Average Price)</option>
+                        <option value="LAST_BUY">LAST BUY (Previous Step)</option>
+                        <option value="LAST_HIGH">LAST HIGH (Trailing Peak)</option>
+                    </select>
                 </div>
                 <div class="grid">
                     <div class="inp-grp"><label>Price Drop (%)</label><input type="number" id="m_drop"></div>
-                    <div class="inp-grp"><label>Multiplier (x)</label><input type="number" id="m_dca"></div>
+                    <div class="inp-grp"><label>Volume Multiplier</label><input type="number" id="m_dca"></div>
                 </div>
             </div>
 
             <div class="section">
-                <div class="sec-title">Risk Management</div>
+                <div class="sec-title">Targets</div>
                 <div class="grid">
                     <div class="inp-grp"><label>Take Profit (%)</label><input type="number" id="m_tp"></div>
                     <div class="inp-grp"><label>Stop Loss (%)</label><input type="number" id="m_sl" placeholder="0 = Off"></div>
                 </div>
             </div>
 
-            <div class="section" style="border-color: rgba(255,61,0,0.3);">
-                <button class="btn-be" onclick="sendAction('BREAK_EVEN')">⚖️ BREAK-EVEN</button>
-                <button class="btn-panic" onclick="sendAction('PANIC_SELL')">🚨 PANIC SELL</button>
+            <div class="section" style="border: 1px dashed rgba(255,23,68,0.5); background: transparent;">
+                <div class="sec-title" style="color:var(--red)">Emergency Override</div>
+                <button class="btn-warn" onclick="sendAction('BREAK_EVEN')">⚖️ PLACE BREAK-EVEN</button>
+                <button class="btn-danger" onclick="sendAction('PANIC_SELL')">🚨 PANIC MARKET SELL</button>
             </div>
 
-            <button class="btn btn-run" style="width:100%" onclick="saveModal()">APPLY SETTINGS</button>
+            <button class="btn btn-run" style="width:100%; padding:16px; font-size:15px; margin-top:10px" onclick="saveModal()">APPLY CONFIGURATION</button>
             <div style="height:50px"></div>
         </div>
     </div>
@@ -118,36 +142,39 @@
         const b = new URLSearchParams(window.location.search).get('b');
         if(b) document.getElementById('main_bal').innerText = b;
 
-        let bots = JSON.parse(localStorage.getItem('v86')) || [{id:'B'+Date.now(), symbol:'BTC/USDT', amount:10, dca_mult:1.5, drop:0.5, tp:0.5, sl:0, budget:100, min_price:0, max_price:0, dca_mode:"AVERAGE", status:false}];
+        let bots = JSON.parse(localStorage.getItem('v87')) || [{
+            id:'B'+Date.now(), symbol:'BTC/USDT', amount:10, dca_mult:1.5, drop:0.5, tp:0.5, sl:0, budget:100, min_price:0, max_price:0, dca_mode:"LAST_DEAL", status:false
+        }];
 
         function rndr() {
             const l = document.getElementById('bots_list'); l.innerHTML = '';
             bots.forEach((b, i) => {
                 l.innerHTML += `
-                <div class="bot-card">
+                <div class="bot-card ${b.status?'on':''}">
                     <div class="bot-top">
-                        <div class="bot-sym">${b.symbol}</div><div class="badge ${b.status?'on':'off'}">${b.status?'ACTIVE':'PAUSED'}</div>
+                        <div class="bot-sym">${b.symbol}</div><div class="badge">${b.status?'ACTIVE':'STANDBY'}</div>
                     </div>
-                    <div class="bot-stats">
-                        <div>Mode: <span>${b.dca_mode==='AVERAGE'?'AVG':'LAST'}</span></div>
-                        <div>Range: <span>${b.min_price||0} - ${b.max_price||'∞'}</span></div>
+                    <div class="stats-grid">
+                        <div class="stat-item">MODE <span>${b.dca_mode.replace('LAST_','')}</span></div>
+                        <div class="stat-item">DROP <span>${b.drop}%</span></div>
+                        <div class="stat-item">PROFIT <span>${b.tp}%</span></div>
                     </div>
                     <div class="actions">
-                        <button class="btn ${b.status?'btn-run':'btn-stop'}" onclick="tog(${i})">${b.status?'⏹ STOP':'▶ START'}</button>
-                        <button class="btn-edit" onclick="opn(${i})">⚙️ SETTINGS</button>
+                        <button class="btn ${b.status?'btn-stop':'btn-run'}" onclick="tog(${i})">${b.status?'PAUSE':'ACTIVATE'}</button>
+                        <button class="btn-edit" onclick="opn(${i})">⚙️</button>
                     </div>
                 </div>`;
             });
         }
 
         function tog(i){ bots[i].status = !bots[i].status; sv(); rndr(); }
-        function addBot(){ bots.push({id:'B'+Date.now(), symbol:'BTC/USDT', amount:10, dca_mult:1.5, drop:0.5, tp:0.5, sl:0, budget:100, min_price:0, max_price:0, dca_mode:"AVERAGE", status:false}); sv(); rndr(); opn(bots.length-1); }
+        function addBot(){ bots.push({id:'B'+Date.now(), symbol:'ETH/USDT', amount:10, dca_mult:1.5, drop:0.5, tp:0.5, sl:0, budget:100, min_price:0, max_price:0, dca_mode:"LAST_DEAL", status:false}); sv(); rndr(); opn(bots.length-1); }
         
         function opn(i) {
             const b = bots[i]; document.getElementById('e_idx').value = i; document.getElementById('m_title').innerText = b.symbol;
             document.getElementById('m_sym').value = b.symbol; document.getElementById('m_amt').value = b.amount;
             document.getElementById('m_bud').value = b.budget; document.getElementById('m_min').value = b.min_price||0;
-            document.getElementById('m_max').value = b.max_price||0; document.getElementById('m_mode').value = b.dca_mode||"AVERAGE";
+            document.getElementById('m_max').value = b.max_price||0; document.getElementById('m_mode').value = b.dca_mode||"LAST_DEAL";
             document.getElementById('m_drop').value = b.drop; document.getElementById('m_dca').value = b.dca_mult;
             document.getElementById('m_tp').value = b.tp; document.getElementById('m_sl').value = b.sl||0;
             document.getElementById('modal').classList.add('open');
@@ -168,12 +195,12 @@
             sv(); rndr(); document.getElementById('modal').classList.remove('open');
         }
 
-        function sv(){ localStorage.setItem('v86', JSON.stringify(bots)); }
+        function sv(){ localStorage.setItem('v87', JSON.stringify(bots)); }
         function deploy(){ sv(); tg.HapticFeedback.notificationOccurred('success'); tg.sendData(JSON.stringify({type: "SYNC", bots: bots})); }
         
         function sendAction(type) {
             const i = document.getElementById('e_idx').value;
-            if(confirm(type==='PANIC_SELL'?'Sell everything NOW?':'Place Break-Even order?')){
+            if(confirm(type==='PANIC_SELL'?'Liquidate everything at Market Price?':'Cancel old orders and place Break-Even?')){
                 tg.sendData(JSON.stringify({type: type, bot_id: bots[i].id}));
                 document.getElementById('modal').classList.remove('open');
             }
