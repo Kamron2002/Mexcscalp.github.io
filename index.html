@@ -1,14 +1,14 @@
+
 <!DOCTYPE html>
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>Clean Architecture V94</title>
-    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <title>Monitor Core V98</title>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;600;700&display=swap');
         :root { --bg: #07090C; --card: #111419; --accent: #00E676; --red: #FF1744; --yellow: #FFD600; --text: #FFFFFF; --sub: #6C7A8C; --border: 1px solid #1E232B; }
-        body { background: var(--bg); color: var(--text); font-family: 'Space Grotesk', sans-serif; margin: 0; padding: 15px; padding-bottom: 80px; }
+        body { background: var(--bg); color: var(--text); font-family: 'Space Grotesk', sans-serif; margin: 0; padding: 15px; padding-bottom: 80px; max-width: 800px; margin-left: auto; margin-right: auto;}
         
         .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px; }
         .logo { font-size: 22px; font-weight: 700; letter-spacing: 1px; }
@@ -16,7 +16,6 @@
         
         .bal-card { background: linear-gradient(145deg, #161A21 0%, #0D1014 100%); border: var(--border); border-radius: 16px; padding: 25px; display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px; box-shadow: 0 10px 30px rgba(0,230,118,0.05); border-left: 4px solid var(--accent); }
         .bal-val { font-size: 32px; font-weight: 700; margin-top: 5px; }
-        .btn-refresh { background: rgba(255,255,255,0.05); border: none; color: var(--text); padding: 10px 15px; border-radius: 10px; cursor: pointer; font-size: 16px; }
 
         .bot-card { background: var(--card); border: var(--border); border-radius: 16px; padding: 20px; margin-bottom: 20px; transition: 0.3s; }
         .bot-card.on { border-color: rgba(0,230,118,0.4); box-shadow: 0 0 20px rgba(0,230,118,0.05); }
@@ -33,16 +32,16 @@
         .trail-active { color: var(--accent) !important; text-shadow: 0 0 5px var(--accent); }
 
         .actions { display: flex; gap: 10px; margin-bottom: 10px;}
-        .btn { flex: 1; padding: 12px; border-radius: 10px; border: none; font-weight: 700; font-size: 13px; cursor: pointer; }
+        .btn { flex: 1; padding: 12px; border-radius: 10px; border: none; font-weight: 700; font-size: 13px; cursor: pointer; color: #fff;}
         .btn-run { background: var(--accent); color: #000; }
-        .btn-stop { background: #1E232B; color: var(--text); }
-        .btn-edit { background: rgba(255,255,255,0.05); color: var(--text); flex: 0 0 50px; }
+        .btn-stop { background: #1E232B; }
+        .btn-edit { background: rgba(255,255,255,0.05); flex: 0 0 50px; }
         
         .btn-be { background: rgba(255,214,0,0.1); color: var(--yellow); border: 1px solid rgba(255,214,0,0.3); width: 100%;}
 
-        .modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); backdrop-filter: blur(8px); z-index: 100; display: none; align-items: flex-end; }
+.modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); z-index: 100; display: none; align-items: center; justify-content: center; }
         .modal.open { display: flex; }
-        .modal-content { background: var(--card); width: 100%; max-height: 85vh; overflow-y: auto; border-radius: 24px 24px 0 0; padding: 25px; border-top: 1px solid #2A2F35; }
+        .modal-content { background: var(--card); width: 95%; max-width: 500px; max-height: 90vh; overflow-y: auto; border-radius: 20px; padding: 25px; border: var(--border); }
         .modal-title { font-size: 20px; font-weight: 700; margin-bottom: 25px; display: flex; justify-content: space-between; }
         
         .section { background: #0A0C10; padding: 18px; border-radius: 14px; border: var(--border); margin-bottom: 15px; }
@@ -51,211 +50,199 @@
         .inp-grp { display: flex; flex-direction: column; gap: 8px; margin-bottom: 15px; }
         .inp-grp label { font-size: 12px; color: var(--sub); font-weight: 600; }
         .inp-grp input, .inp-grp select { background: #161A21; border: 1px solid #2A2F35; color: #fff; padding: 14px; border-radius: 10px; font-size: 15px; outline: none; }
-        .inp-grp input:focus, .inp-grp select:focus { border-color: var(--accent); }
         
-        .btn-danger { background: rgba(255,23,68,0.1); color: var(--red); border: 1px solid rgba(255,23,68,0.3); width: 100%; padding: 14px; border-radius: 10px; font-weight: 700; margin-bottom: 10px; }
-        
-        .main-btn { position: fixed; bottom: 20px; left: 15px; right: 15px; background: rgba(255,255,255,0.05); color: #fff; border: 1px dashed rgba(255,255,255,0.3); padding: 18px; border-radius: 14px; font-weight: 700; font-size: 16px; cursor: pointer; text-transform: uppercase; letter-spacing: 1px; z-index: 50; }
+        .btn-danger { background: rgba(255,23,68,0.1); color: var(--red); border: 1px solid rgba(255,23,68,0.3); width: 100%; padding: 14px; border-radius: 10px; font-weight: 700; cursor: pointer;}
+        .main-btn { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); width: 90%; max-width: 760px; background: rgba(255,255,255,0.05); color: #fff; border: 1px dashed rgba(255,255,255,0.3); padding: 18px; border-radius: 14px; font-weight: 700; font-size: 16px; cursor: pointer; text-transform: uppercase; letter-spacing: 1px; z-index: 50; }
         .main-btn.needs-sync { background: var(--accent); color: #000; border: none; box-shadow: 0 10px 25px rgba(0,230,118,0.2); animation: pulse 2s infinite; }
         @keyframes pulse { 0% { transform: scale(1); } 50% { transform: scale(1.02); } 100% { transform: scale(1); } }
     </style>
 </head>
 <body>
 
-    <div class="header"><div class="logo">CLEAN <span>CORE</span></div></div>
+    <div class="header"><div class="logo">MONITOR <span>CORE</span></div></div>
     
     <div class="bal-card">
         <div>
             <div style="color:var(--sub);font-size:12px;font-weight:600;letter-spacing:1px">USDT BALANCE</div>
             <div class="bal-val">$ <span id="main_bal">0.00</span></div>
         </div>
-        <button class="btn-refresh" onclick="tg.sendData(JSON.stringify({type:'REFRESH'}))">↻</button>
+        <div style="font-size: 12px; color: var(--sub);" id="status_text">Live Sync 🟢</div>
     </div>
 
-    <div id="bots_list"></div>
-    <div style="text-align:center; margin-top:20px; margin-bottom:40px;"><button class="btn" style="background:transparent; border:2px dashed #2A2F35; color:var(--sub); width:100%; padding:15px; font-size:14px;" onclick="addBot()">+ ADD NEW BOT</button></div>
+    <div id="bots_list">Loading...</div>
+    <div id="add_btn_container" style="text-align:center; margin-top:20px; margin-bottom:80px;"><button class="btn" style="background:transparent; border:2px dashed #2A2F35; color:var(--sub); width:100%; padding:15px; font-size:14px;" onclick="addBot()">+ ADD NEW BOT</button></div>
 
     <button id="sync_btn" class="main-btn" onclick="deploy()">🔄 ALL SYNCED</button>
 
-    <div class="modal" id="modal">
+<div class="modal" id="modal">
         <div class="modal-content">
             <div class="modal-title"><span id="m_title">Bot Setup</span><span style="color:var(--sub);cursor:pointer" onclick="document.getElementById('modal').classList.remove('open')">✕</span></div>
             <input type="hidden" id="e_idx">
             
             <div class="section">
-                <div class="sec-title">Core Setup</div>
-                <div class="inp-grp"><label>Symbol Pair</label><input type="text" id="m_sym"></div>
                 <div class="grid">
+                    <div class="inp-grp"><label>Symbol</label><input type="text" id="m_sym"></div>
                     <div class="inp-grp"><label>Base Order ($)</label><input type="number" id="m_amt"></div>
-                    <div class="inp-grp"><label>Max Budget ($)</label><input type="number" id="m_bud"></div>
+                    <div class="inp-grp"><label>Max Budget</label><input type="number" id="m_bud"></div>
+                    <div class="inp-grp"><label>Drop (%)</label><input type="number" id="m_drop"></div>
+                    <div class="inp-grp"><label>Multiplier (x)</label><input type="number" id="m_dca"></div>
+                    <div class="inp-grp"><label>Take Profit (%)</label><input type="number" id="m_tp"></div>
+                    <div class="inp-grp"><label>Stop Loss (%)</label><input type="number" id="m_sl"></div>
+                    <div class="inp-grp"><label>Trailing Dev (%)</label><input type="number" id="m_trail"></div>
                 </div>
             </div>
 
             <div class="section">
-                <div class="sec-title">Trading Range</div>
-                <div class="grid">
-                    <div class="inp-grp"><label>Min Price</label><input type="number" id="m_min"></div>
-                    <div class="inp-grp"><label>Max Price</label><input type="number" id="m_max"></div>
-                </div>
-            </div>
-
-            <div class="section" style="border-color: rgba(0,230,118,0.3);">
-                <div class="sec-title" style="color:var(--accent)">Smart DCA Logic</div>
                 <div class="inp-grp">
                     <label>Averaging Base</label>
                     <select id="m_mode">
-                        <option value="LAST_DEAL">LAST DEAL (Average Price)</option>
-                        <option value="LAST_BUY">LAST BUY (Previous Step)</option>
-                        <option value="LAST_HIGH">LAST HIGH (Trailing Peak)</option>
+                        <option value="LAST_DEAL">LAST DEAL (Avg Price)</option>
+                        <option value="LAST_BUY">LAST BUY (Prev Step)</option>
+                        <option value="LAST_HIGH">LAST HIGH (Trailing)</option>
                     </select>
                 </div>
-                <div class="grid">
-                    <div class="inp-grp"><label>Price Drop (%)</label><input type="number" id="m_drop"></div>
-                    <div class="inp-grp"><label>Multiplier (x)</label><input type="number" id="m_dca"></div>
-                </div>
             </div>
 
-            <div class="section">
-                <div class="sec-title">Smart Targets</div>
-                <div class="grid">
-                    <div class="inp-grp"><label>Take Profit Base (%)</label><input type="number" id="m_tp"></div>
-                    <div class="inp-grp"><label>Trailing Dev. (%)</label><input type="number" id="m_trail" placeholder="0 = Limit TP"></div>
-                </div>
-                <div class="inp-grp"><label>Stop Loss (%)</label><input type="number" id="m_sl" placeholder="0 = Off"></div>
-            </div>
-
-            <button class="btn btn-run" style="width:100%; padding:16px; font-size:15px; margin-top:10px" onclick="saveModal()">💾 APPLY (LOCAL SAVE)</button>
+            <button id="modal_save_btn" class="btn btn-run" style="width:100%; padding:16px; font-size:15px; margin-bottom:15px;" onclick="saveModal()">💾 APPLY (LOCAL SAVE)</button>
             
-            <div class="section" style="border: 1px dashed rgba(255,23,68,0.5); background: transparent; margin-top: 20px;">
+            <div id="modal_delete_container" class="section" style="border: 1px dashed rgba(255,23,68,0.5); background: transparent;">
                 <button class="btn-danger" onclick="deleteBot()">🗑 DELETE BOT</button>
             </div>
-
-            <div style="height:50px"></div>
         </div>
     </div>
 
     <script>
-        const tg = window.Telegram.WebApp; tg.expand();
-        const b = new URLSearchParams(window.location.search).get('b');
-        if(b) document.getElementById('main_bal').innerText = b;
-
-        let bots = JSON.parse(localStorage.getItem('v94')) || [{
-            id:'B'+Date.now(), symbol:'BTC/USDT', amount:10, dca_mult:1.5, drop:0.5, tp:0.5, sl:0, budget:100, min_price:0, max_price:0, dca_mode:"LAST_DEAL", trailing_dev:0, status:false
-        }];
-        
+        let bots = [];
         let needsSync = false;
+        // Python заменит эту строку для наблюдателя на true
+        let bots_cache = []; let IS_OBSERVER = false; 
+
+        async function fetchState() {
+            try {
+                const res = await fetch('/api/state');
+                const data = await res.json();
+                document.getElementById('main_bal').innerText = data.balance;
+                if(!document.getElementById('modal').classList.contains('open') && !needsSync){
+                    bots = data.bots;
+                    rndr();
+                }
+                document.getElementById('status_text').innerText = "Live Sync 🟢";
+            } catch (e) { document.getElementById('status_text').innerText = "Offline 🔴"; }
+        }
+        setInterval(fetchState, 3000);
+        fetchState();
 
         function updateSyncBtn() {
             const btn = document.getElementById('sync_btn');
-            if (needsSync) {
-                btn.className = "main-btn needs-sync";
-                btn.innerText = "🚀 SYNC TO SERVER (CLOSES APP)";
-            } else {
-                btn.className = "main-btn";
-                btn.innerText = "🔄 ALL SYNCED";
-            }
+            if (IS_OBSERVER) { btn.style.display = 'none'; return; } // Прячем для наблюдателя
+            if (needsSync) { btn.className = "main-btn needs-sync"; btn.innerText = "🚀 SYNC TO SERVER"; } 
+            else { btn.className = "main-btn"; btn.innerText = "🔄 ALL SYNCED"; }
         }
 
-        function rndr() {
+function rndr() {
             const l = document.getElementById('bots_list'); l.innerHTML = '';
+            if(typeof IS_OBSERVER !== 'undefined' && IS_OBSERVER === true) {
+                document.getElementById('add_btn_container').style.display = 'none';
+                document.getElementById('sync_btn').style.display = 'none';
+            }
             bots.forEach((b, i) => {
-                let trailStr = b.trailing_dev > 0 ? `<span class="trail-active">${b.trailing_dev}% T-TP</span>` : `<span>Limit TP</span>`;
-                let dcaStr = b.dca_mode === 'LAST_HIGH' ? `<span class="trail-active">TRAILING</span>` : `<span>${b.dca_mode.replace('LAST_','')}</span>`;
+                let trailStr = b.trailing_dev > 0 ? <span class="trail-active">${b.trailing_dev}% T-TP</span> : <span>Limit TP</span>;
+                let dcaStr = b.dca_mode === 'LAST_HIGH' ? <span class="trail-active">TRAILING</span> : <span>${b.dca_mode.replace('LAST_','')}</span>;
                 
+                let actionButtons = `
+                    <div class="actions">
+                        <button class="btn ${b.status?'btn-stop':'btn-run'}" onclick="tog(${i})">${b.status?'PAUSE':'ACTIVATE'}</button>
+                        <button class="btn-edit" onclick="opn(${i})">⚙️</button>
+                    </div>
+                    <div class="actions" style="margin-top: 10px;">
+                        <button class="btn btn-be" onclick="sendAction('BREAK_EVEN', '${b.id}')">⚖️ BREAK-EVEN</button>
+                    </div>`;
+                
+                // Если зашел наблюдатель — блокируем управление
+                if(typeof IS_OBSERVER !== 'undefined' && IS_OBSERVER === true) {
+                    actionButtons = `
+                    <div class="actions">
+                        <button class="btn btn-edit" style="width:100%; flex: 1;" onclick="opn(${i})">🔍 VIEW CONFIG</button>
+                    </div>`;
+                }
+
                 l.innerHTML += `
                 <div class="bot-card ${b.status?'on':''}">
                     <div class="bot-top">
-                        <div class="bot-sym">${b.symbol}</div><div class="badge">${b.status?'ACTIVE':'STANDBY'}</div>
+                        <div class="bot-sym">${b.symbol} <span style="font-size:12px; color:var(--sub)">(${b.trades_count} trades)</span></div>
+                        <div class="badge">${b.status?'ACTIVE':'STANDBY'}</div>
                     </div>
                     <div class="stats-grid">
                         <div class="stat-item">DCA MODE ${dcaStr}</div>
                         <div class="stat-item">DROP <span>${b.drop}%</span></div>
                         <div class="stat-item">EXIT ${trailStr}</div>
                     </div>
-                    
-                    <div class="actions">
-                        <button class="btn ${b.status?'btn-stop':'btn-run'}" onclick="tog(${i})">${b.status?'PAUSE':'ACTIVATE'}</button>
-                        <button class="btn-edit" onclick="opn(${i})">⚙️</button>
-                    </div>
-                    
-                    <div class="actions" style="margin-top: 10px;">
-                        <button class="btn btn-be" onclick="sendAction('BREAK_EVEN', ${i})">⚖️ BREAK-EVEN</button>
-                    </div>
+                    ${actionButtons}
                 </div>`;
             });
             updateSyncBtn();
         }
 
-        function tog(i){ 
-            bots[i].status = !bots[i].status; 
-            needsSync = true;
-            sv(); rndr(); 
-        }
-        
-        function addBot(){ 
-            bots.push({ id:'B'+Date.now(), symbol:'ETH/USDT', amount:10, dca_mult:1.5, drop:0.5, tp:0.5, sl:0, budget:100, min_price:0, max_price:0, dca_mode:"LAST_DEAL", trailing_dev:0, status:false }); 
-            needsSync = true;
-            sv(); rndr(); opn(bots.length-1); 
-        }
+function tog(i){ bots[i].status = !bots[i].status; needsSync = true; rndr(); }
+        function addBot(){ bots.push({ id:'B'+Date.now(), symbol:'ETH/USDT', amount:10, dca_mult:1.5, drop:0.5, tp:0.5, sl:0, budget:100, min_price:0, max_price:0, dca_mode:"LAST_DEAL", trailing_dev:0, status:false, trades_count:0 }); needsSync = true; rndr(); opn(bots.length-1); }
         
         function opn(i) {
             const b = bots[i]; document.getElementById('e_idx').value = i; document.getElementById('m_title').innerText = b.symbol;
             document.getElementById('m_sym').value = b.symbol; document.getElementById('m_amt').value = b.amount;
-            document.getElementById('m_bud').value = b.budget; document.getElementById('m_min').value = b.min_price || 0;
-            document.getElementById('m_max').value = b.max_price || 0; document.getElementById('m_drop').value = b.drop; 
-            document.getElementById('m_mode').value = b.dca_mode || "LAST_DEAL"; document.getElementById('m_dca').value = b.dca_mult; 
-            document.getElementById('m_tp').value = b.tp; document.getElementById('m_sl').value = b.sl || 0;
-            document.getElementById('m_trail').value = b.trailing_dev || 0;
+            document.getElementById('m_bud').value = b.budget; document.getElementById('m_drop').value = b.drop; 
+            document.getElementById('m_mode').value = b.dca_mode  "LAST_DEAL"; document.getElementById('m_dca').value = b.dca_mult; 
+            document.getElementById('m_tp').value = b.tp; document.getElementById('m_sl').value = b.sl  0; document.getElementById('m_trail').value = b.trailing_dev  0;
+            
+            // Если наблюдатель — отключаем возможность ввода
+            if(typeof IS_OBSERVER !== 'undefined' && IS_OBSERVER === true) {
+                document.getElementById('modal_save_btn').style.display = 'none';
+                document.getElementById('modal_delete_container').style.display = 'none';
+                const inputs = document.querySelectorAll('.modal-content input, .modal-content select');
+                inputs.forEach(el => el.disabled = true);
+            } else {
+                document.getElementById('modal_save_btn').style.display = 'block';
+                document.getElementById('modal_delete_container').style.display = 'block';
+                const inputs = document.querySelectorAll('.modal-content input, .modal-content select');
+                inputs.forEach(el => el.disabled = false);
+            }
             document.getElementById('modal').classList.add('open');
         }
         
         function saveModal() {
             const i = document.getElementById('e_idx').value;
             bots[i].symbol = document.getElementById('m_sym').value.toUpperCase();
-            bots[i].amount = parseFloat(document.getElementById('m_amt').value) || 10;
-            bots[i].budget = parseFloat(document.getElementById('m_bud').value) || 0;
-            bots[i].min_price = parseFloat(document.getElementById('m_min').value) || 0;
-            bots[i].max_price = parseFloat(document.getElementById('m_max').value) || 0;
+            bots[i].amount = parseFloat(document.getElementById('m_amt').value)  10;
+            bots[i].budget = parseFloat(document.getElementById('m_bud').value)  0;
             bots[i].dca_mode = document.getElementById('m_mode').value;
-            bots[i].drop = parseFloat(document.getElementById('m_drop').value) || 0.5;
-            bots[i].dca_mult = parseFloat(document.getElementById('m_dca').value) || 1.5;
-            bots[i].tp = parseFloat(document.getElementById('m_tp').value) || 0.5;
-            bots[i].sl = parseFloat(document.getElementById('m_sl').value) || 0;
-            bots[i].trailing_dev = parseFloat(document.getElementById('m_trail').value) || 0;
-            
-            needsSync = true;
-            sv(); rndr(); document.getElementById('modal').classList.remove('open');
+            bots[i].drop = parseFloat(document.getElementById('m_drop').value)  0.5;
+            bots[i].dca_mult = parseFloat(document.getElementById('m_dca').value)  1.5;
+            bots[i].tp = parseFloat(document.getElementById('m_tp').value)  0.5;
+            bots[i].sl = parseFloat(document.getElementById('m_sl').value)  0;
+            bots[i].trailing_dev = parseFloat(document.getElementById('m_trail').value)  0;
+            needsSync = true; document.getElementById('modal').classList.remove('open'); rndr();
         }
 
-        function deleteBot() {
-            const i = document.getElementById('e_idx').value;
-            if(confirm("Delete this bot completely? This will cancel all its orders.")){
-                const botId = bots[i].id;
-                bots.splice(i, 1);
-                sv();
-                if(tg.HapticFeedback) tg.HapticFeedback.notificationOccurred('warning');
-                tg.sendData(JSON.stringify({type: "DELETE_BOT", bot_id: botId}));
-                document.getElementById('modal').classList.remove('open');
-            }
-        }
-
-        function sv(){ localStorage.setItem('v94', JSON.stringify(bots)); }
-        
-        function deploy(){ 
+        async function deploy() {
             if (!needsSync) return;
-            if(tg.HapticFeedback) tg.HapticFeedback.notificationOccurred('success'); 
-            tg.sendData(JSON.stringify({type: "SYNC", bots: bots})); 
+            const btn = document.getElementById('sync_btn'); btn.innerText = "⏳ SYNCING...";
+            await fetch('/api/sync', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({bots: bots}) });
+            needsSync = false; fetchState();
         }
-        
-        function sendAction(type, idx) {
-            let msg = 'Cancel active orders and place a LIMIT SELL at your average entry price? (Closes app)';
-            if(confirm(msg)){
-                if(tg.HapticFeedback) tg.HapticFeedback.notificationOccurred('warning');
-                tg.sendData(JSON.stringify({type: type, bot_id: bots[idx].id}));
+
+async function deleteBot() {
+            if(confirm("Delete bot completely?")){
+                const botId = bots[document.getElementById('e_idx').value].id;
+                document.getElementById('modal').classList.remove('open');
+                await fetch('/api/action', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({type: "DELETE_BOT", bot_id: botId}) });
+                needsSync = false; fetchState();
             }
         }
-        
-        rndr();
+        async function sendAction(type, botId) {
+            if(confirm('Place a LIMIT SELL at your average entry price?')){
+                await fetch('/api/action', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({type: type, bot_id: botId}) });
+                fetchState();
+            }
+        }
     </script>
 </body>
 </html>
